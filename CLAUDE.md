@@ -18,7 +18,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Animation**: Framer Motion
 - **Deployment**: Vercel
 
+## Project Structure
+
+The Next.js application lives in the `web/` directory:
+
+```
+chorus/                  # Repository root
+├── web/                # Next.js application
+│   ├── app/           # Next.js App Router pages and layouts
+│   ├── components/    # React components
+│   ├── lib/           # Utility functions and shared logic
+│   ├── prisma/        # Database schema and migrations
+│   ├── types/         # TypeScript type definitions
+│   └── ...
+├── CLAUDE.md          # Project documentation (this file)
+├── PLAN.md            # Implementation roadmap
+└── README.md          # Project overview
+```
+
+**All npm commands and development work should be run from within the `web/` directory.**
+
 ## Common Commands
+
+**Note**: Run all commands from the `web/` directory.
+
+```bash
+cd web  # Always navigate to web directory first
 
 ```bash
 # Development
