@@ -1,6 +1,14 @@
 import { PrismaClient, Frequency } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
-const prisma = new PrismaClient();
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+const adapter = new PrismaPg(pool);
+
+const prisma = new PrismaClient({ adapter });
 
 const SAMPLE_CHORES: { title: string; frequency: Frequency; description?: string }[] = [
   // Daily (5)
@@ -116,4 +124,5 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
   });
