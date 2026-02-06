@@ -25,12 +25,19 @@ export default function SignInPage() {
     setLoading(true);
 
     try {
-      await authClient.signIn.email({
+      const result = await authClient.signIn.email({
         email,
         password,
       });
 
-      // Redirect to dashboard on success
+      // Check for errors in the response
+      if (result.error) {
+        setError(result.error.message || 'Invalid email or password');
+        setLoading(false);
+        return;
+      }
+
+      // Only redirect if authentication was successful
       router.push('/dashboard');
       router.refresh();
     } catch (err) {

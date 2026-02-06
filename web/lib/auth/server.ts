@@ -10,5 +10,13 @@ import { createAuthServer } from '@neondatabase/auth/next/server';
  * Note: createAuthServer() automatically reads from environment variables:
  * - NEON_AUTH_BASE_URL
  * - NEON_AUTH_COOKIE_SECRET
+ *
+ * Security configuration is managed in the Neon Console:
+ * - Session duration and timeouts
+ * - Cookie security flags (httpOnly, secure, sameSite)
+ * - OAuth provider configuration
+ * - Password policies
+ *
+ * See: https://console.neon.tech → Your Project → Auth → Settings
  */
 export const auth = createAuthServer();

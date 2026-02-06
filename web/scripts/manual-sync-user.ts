@@ -21,6 +21,26 @@ import { db } from '../lib/db';
 
 async function manualSyncUser(email: string) {
   try {
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      console.error('❌ Invalid email format');
+      process.exit(1);
+    }
+
+    // Limit email length
+    if (email.length > 255) {
+      console.error('❌ Email too long (max 255 characters)');
+      process.exit(1);
+    }
+
+    // Disable in production
+    if (process.env.NODE_ENV === 'production') {
+      console.error('❌ This script is disabled in production for security reasons');
+      console.error('   Please use the Neon Console to manage users in production');
+      process.exit(1);
+    }
+
     console.log(`\nLooking for Neon Auth user with email: ${email}...`);
 
     // Query the neon_auth.user table directly

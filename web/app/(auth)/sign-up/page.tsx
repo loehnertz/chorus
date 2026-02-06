@@ -41,11 +41,18 @@ export default function SignUpPage() {
     setLoading(true);
 
     try {
-      await authClient.signUp.email({
+      const result = await authClient.signUp.email({
         email,
         password,
         name,
       });
+
+      // Check for errors in the response
+      if (result.error) {
+        setError(result.error.message || 'Failed to create account. Please try again.');
+        setLoading(false);
+        return;
+      }
 
       // After successful signup, user will be redirected to pending-approval
       // by the dashboard layout (since they're not approved yet)

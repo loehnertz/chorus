@@ -1,103 +1,215 @@
 # Security Configuration
 
-## Account Creation Policy
+## Approval-Based Access Control
 
-**Public sign-up is completely disabled.** Only the household administrator can create user accounts manually.
+Chorus implements a **two-layer security model** where all users must be both authenticated AND approved to access data.
 
-## Security Measures
+### Security Model Overview
 
-### 1. No Public Sign-up Page
-- The `/sign-up` route has been removed
-- Users attempting to access `/sign-up` will get a 404 error
+1. **Public Sign-Up with Approval Requirement**
+   - Users can self-register at `/sign-up`
+   - New accounts are created with `approved: false` by default
+   - Users see "Pending Approval" page after registration
+   - Administrator must manually approve accounts via CLI script
 
-### 2. API Endpoint Protection
-The auth API handler (`/api/auth/[...path]`) blocks all sign-up related endpoints:
-- `POST /api/auth/sign-up` → **403 Forbidden**
-- `POST /api/auth/signup` → **403 Forbidden**
-- `POST /api/auth/register` → **403 Forbidden**
+2. **Two-Layer Security Model**
+   - **Layer 1: Authentication** (Neon Auth) - Verifies identity
+   - **Layer 2: Approval** (App layer) - Verifies authorization
+   - All data access requires BOTH authentication AND approval
+   - Unapproved users cannot read or write any application data
 
-All other auth endpoints work normally:
-- `POST /api/auth/sign-in` → ✅ Allowed
-- `POST /api/auth/sign-out` → ✅ Allowed
-- `GET /api/auth/session` → ✅ Allowed
-- OAuth flows → ✅ Allowed (if configured)
+3. **Defense in Depth**
+   - Unapproved users are blocked at multiple levels:
+     - Dashboard layout redirects to `/pending-approval`
+     - All protected routes check approval via `requireApprovedUser()`
+     - Future API routes must use `requireApprovedUser()` wrapper
+   - Even if authentication succeeds, unapproved users cannot access data
 
-### 3. Client-Side Protection
-The client auth instance (`lib/auth/client.ts`) should not be used for sign-up attempts.
+### Approval Workflow
 
-## How to Create User Accounts
-
-See [MANUAL_USER_CREATION.md](./MANUAL_USER_CREATION.md) for detailed instructions on creating user accounts manually.
-
-### Quick Reference:
-
-**Recommended Method: Neon Console**
-1. Go to [Neon Console](https://console.neon.tech)
-2. Select your Chorus project
-3. Navigate to **Auth** → **Users**
-4. Click **"Add User"**
-5. Enter email, name, and password
-6. Click **Create**
-
-**Helper Script (Development):**
+**List Unapproved Users:**
 ```bash
-npx tsx scripts/create-user.ts
+npx tsx scripts/approve-user.ts
 ```
-This script provides instructions for manual user creation.
+
+**Approve Specific User:**
+```bash
+npx tsx scripts/approve-user.ts <user-id>
+```
+
+**Example Output:**
+```
+✓ User approved!
+   ID: 123e4567-e89b-12d3-a456-426614174000
+   Name: Jane Doe
+   Email: jane@example.com
+```
+
+### Security Best Practices
+
+**Recommended Configuration:**
+- ✅ Enable two-factor authentication in Neon Console (when available)
+- ✅ Use strong passwords (enforced: min 8 characters)
+- ✅ Review approval requests promptly
+- ✅ Revoke approval for inactive users
+- ✅ Monitor sign-up activity for abuse
+
+**Future Enhancements (Phase 3+):**
+- Rate limiting on sign-up/sign-in endpoints (5 attempts/min per IP)
+- Account lockout after failed login attempts
+- Enhanced password complexity requirements
+- Session timeout configuration
+- RBAC with roles (PENDING → MEMBER → ADMIN)
 
 ## User Sync Behavior
 
-After creating a user in Neon Auth:
+After creating a user in Neon Auth or signing up:
 1. User signs in at `/sign-in`
 2. Neon Auth authenticates the user
 3. On successful sign-in, the app automatically:
    - Creates a User record in the app database (if first login)
    - Syncs user data (name, image) from Neon Auth
    - Uses the same UUID from Neon Auth as the User ID
+   - Sets `approved: false` by default
 
-## Testing Account Creation Protection
+## Testing Approval Flow
 
-To verify that sign-up is properly blocked:
+To verify that the approval system works correctly:
 
 ```bash
-# Try to access sign-up page (should return 404)
-curl http://localhost:3001/sign-up
+# 1. Sign up a new user at http://localhost:3001/sign-up
+# 2. Try to access dashboard (should redirect to /pending-approval)
 
-# Try to call sign-up API (should return 403)
-curl -X POST http://localhost:3001/api/auth/sign-up \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@test.com","password":"password123"}'
+# 3. List unapproved users
+npx tsx scripts/approve-user.ts
 
-# Expected response:
-# {"error":"Public sign-up is disabled. Accounts must be created manually by the administrator."}
+# 4. Approve the user
+npx tsx scripts/approve-user.ts <user-id-from-step-3>
+
+# 5. Sign in again and verify dashboard access works
 ```
+
+## Manual User Sync (Troubleshooting)
+
+If user sync fails during sign-in, use the manual sync script:
+
+```bash
+npx tsx scripts/manual-sync-user.ts user@example.com
+```
+
+**Security Note:** This script is disabled in production and requires valid email format.
+
+## Session Security Configuration
+
+Session and cookie security is configured in the **Neon Console**, not in application code.
+
+### Recommended Settings (Neon Console)
+
+Go to [Neon Console](https://console.neon.tech) → Your Project → **Auth** → **Settings**:
+
+1. **Session Duration:**
+   - Maximum session age: 7 days (168 hours)
+   - Session refresh interval: 24 hours
+   - Idle timeout: 8 hours
+
+2. **Cookie Settings:**
+   - ✅ HttpOnly flag enabled (prevents XSS attacks)
+   - ✅ Secure flag enabled in production (HTTPS only)
+   - ✅ SameSite: Lax (CSRF protection)
+
+3. **Password Policy:**
+   - Minimum length: 8 characters (current)
+   - **Recommended:** Enable complexity requirements (uppercase, numbers, special chars)
+
+4. **Additional Security:**
+   - Enable two-factor authentication (if available)
+   - Configure OAuth providers (Google, GitHub)
+   - Set up email verification
+   - Configure password reset flow
+
+**Note:** Session configuration cannot be set in `createAuthServer()` - it's managed by the Neon Auth service.
 
 ## Deployment Security Checklist
 
 Before deploying to production:
 
-- [ ] Verify `/sign-up` route is removed (returns 404)
-- [ ] Test that `POST /api/auth/sign-up` returns 403
+- [ ] Review all unapproved users and approve/deny as needed
 - [ ] Ensure only authorized users have database access
 - [ ] Document admin credentials securely (use password manager)
-- [ ] Set strong `NEON_AUTH_COOKIE_SECRET` in production environment
+- [ ] Set strong `NEON_AUTH_COOKIE_SECRET` in production environment (min 32 characters)
 - [ ] Enable HTTPS in production (Vercel does this automatically)
-- [ ] Review Neon Auth security settings in Neon Console
+- [ ] **Configure session security in Neon Console** (see above)
+- [ ] Verify password policy in Neon Console
+- [ ] Enable email verification in Neon Console
+- [ ] Configure OAuth providers in Neon Console (if using)
+- [ ] Consider implementing rate limiting (see Phase 3 tasks)
+- [ ] Test approval workflow end-to-end
 
-## Emergency: Re-enabling Sign-up
+## Recommended Security Headers
 
-If you need to temporarily enable sign-up (e.g., for adding multiple users):
+Add these headers in `next.config.js` for production:
 
-1. **Edit `/app/api/auth/[...path]/route.ts`:**
-   - Comment out the sign-up blocking code in the POST handler
-   - Redeploy
+```javascript
+headers: async () => [
+  {
+    source: '/(.*)',
+    headers: [
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'X-Frame-Options', value: 'DENY' },
+      { key: 'X-XSS-Protection', value: '1; mode=block' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+    ],
+  },
+],
+```
 
-2. **Restore sign-up page (if needed):**
-   - Restore the deleted `/app/(auth)/sign-up/page.tsx` from git history
-   - Update middleware to include `/sign-up` in public routes
+## Future: Role-Based Access Control (RBAC)
 
-3. **Re-disable after adding users:**
-   - Reverse the above changes
-   - Redeploy
+Planned for future phases:
 
-**WARNING:** Only do this if absolutely necessary, and disable immediately after adding users.
+```typescript
+enum UserRole {
+  PENDING    // Awaiting approval
+  MEMBER     // Approved, can view/complete chores
+  ADMIN      // Can manage users and chores
+}
+```
+
+This will enable:
+- Self-service user management by admins
+- Granular permissions (read-only, edit, admin)
+- Audit log of who approved whom
+- Automatic approval for trusted email domains
+
+## Emergency: Disabling Sign-Up
+
+If you need to temporarily disable sign-up (e.g., abuse):
+
+1. **Remove sign-up route:**
+   ```bash
+   git mv web/app/(auth)/sign-up/page.tsx web/app/(auth)/sign-up/page.tsx.disabled
+   ```
+
+2. **Add API blocking (optional):**
+   ```typescript
+   // web/app/api/auth/[...path]/route.ts
+   export async function POST(request: NextRequest) {
+     const pathname = request.nextUrl.pathname;
+
+     if (pathname.includes('/sign-up') || pathname.includes('/signup')) {
+       return Response.json(
+         { error: 'Sign-up is temporarily disabled' },
+         { status: 403 }
+       );
+     }
+
+     return handler.POST(request);
+   }
+   ```
+
+3. **Re-enable after fixing issue:**
+   - Restore the sign-up page
+   - Remove API blocking code
+   - Deploy
+
+**WARNING:** Only disable sign-up if absolutely necessary for security reasons.
