@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { auth } from './server';
 import { db } from '@/lib/db';
 import { syncUser } from './user-sync';
+import type { NeonAuthSession } from '@/types/auth';
 
 /**
  * Require user approval for data access
@@ -94,6 +95,52 @@ export async function requireApprovedUser() {
  * }
  * ```
  */
+/**
+ * Require user approval for API routes (returns JSON errors instead of redirects)
+ *
+ * Use this in API route handlers where redirects are not appropriate.
+ * Returns a Response with JSON error on failure, or the session on success.
+ *
+ * @returns Response (error) or NeonAuthSession (success)
+ *
+ * @example
+ * ```typescript
+ * export async function GET() {
+ *   const result = await requireApprovedUserApi();
+ *   if (isErrorResponse(result)) return result;
+ *   const session = result;
+ *   // ... handle request
+ * }
+ * ```
+ */
+export async function requireApprovedUserApi(): Promise<Response | NeonAuthSession> {
+  const { data: session } = await auth.getSession();
+
+  if (!session?.user) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  await syncUser(session.user);
+
+  const user = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { approved: true },
+  });
+
+  if (!user?.approved) {
+    return Response.json({ error: 'User not approved' }, { status: 403 });
+  }
+
+  return session as unknown as NeonAuthSession;
+}
+
+/**
+ * Type guard to check if the result from requireApprovedUserApi is an error Response
+ */
+export function isErrorResponse(result: Response | NeonAuthSession): result is Response {
+  return result instanceof Response;
+}
+
 export async function checkApprovedUser() {
   const { data: session } = await auth.getSession();
 
