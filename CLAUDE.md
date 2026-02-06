@@ -42,6 +42,11 @@ chorus/                  # Repository root
 
 **Note**: Run all commands from the `web/` directory.
 
+**IMPORTANT for Claude**: When testing, use a different port to avoid killing the user's dev server:
+```bash
+PORT=30010 npm run dev   # Use port 30010 for testing
+```
+
 ```bash
 cd web  # Always navigate to web directory first
 
