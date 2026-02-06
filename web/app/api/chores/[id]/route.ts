@@ -1,8 +1,6 @@
 import { db } from '@/lib/db';
 import { requireApprovedUserApi, isErrorResponse } from '@/lib/auth/require-approval';
-import { Frequency } from '@prisma/client';
-
-const VALID_FREQUENCIES = Object.values(Frequency);
+import { updateChoreSchema, formatValidationError } from '@/lib/validations';
 
 export async function GET(
   _request: Request,
@@ -56,20 +54,13 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { title, frequency, description, assigneeIds } = body;
+    const parsed = updateChoreSchema.safeParse(body);
 
-    // Validate title if provided
-    if (title !== undefined && (typeof title !== 'string' || title.trim().length === 0)) {
-      return Response.json({ error: 'Title cannot be empty' }, { status: 400 });
+    if (!parsed.success) {
+      return Response.json(formatValidationError(parsed.error), { status: 400 });
     }
 
-    // Validate frequency if provided
-    if (frequency !== undefined && !VALID_FREQUENCIES.includes(frequency)) {
-      return Response.json(
-        { error: `Invalid frequency. Must be one of: ${VALID_FREQUENCIES.join(', ')}` },
-        { status: 400 },
-      );
-    }
+    const { title, frequency, description, assigneeIds } = parsed.data;
 
     // Check chore exists
     const existing = await db.chore.findUnique({ where: { id } });
@@ -79,9 +70,9 @@ export async function PUT(
 
     // Build update data
     const updateData: Record<string, unknown> = {};
-    if (title !== undefined) updateData.title = title.trim();
+    if (title !== undefined) updateData.title = title;
     if (frequency !== undefined) updateData.frequency = frequency;
-    if (description !== undefined) updateData.description = description?.trim() || null;
+    if (description !== undefined) updateData.description = description;
 
     if (assigneeIds !== undefined) {
       // Use transaction to replace assignments atomically

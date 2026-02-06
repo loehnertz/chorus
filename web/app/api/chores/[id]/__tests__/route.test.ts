@@ -163,7 +163,7 @@ describe('PUT /api/chores/[id]', () => {
 
     expect(response.status).toBe(400);
     const body = await response.json();
-    expect(body.error).toBe('Title cannot be empty');
+    expect(body.error).toBe('Validation failed');
   });
 
   it('should return 400 for invalid frequency', async () => {
@@ -174,6 +174,8 @@ describe('PUT /api/chores/[id]', () => {
     const response = await PUT(request, makeParams('test-id'));
 
     expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toBe('Validation failed');
   });
 
   it('should use transaction when updating assigneeIds', async () => {

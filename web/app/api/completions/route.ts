@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
 import { requireApprovedUserApi, isErrorResponse } from '@/lib/auth/require-approval';
+import { createCompletionSchema, formatValidationError } from '@/lib/validations';
 
 export async function POST(request: Request) {
   try {
@@ -8,12 +9,13 @@ export async function POST(request: Request) {
     const session = result;
 
     const body = await request.json();
-    const { choreId, scheduleId, notes, completedAt } = body;
+    const parsed = createCompletionSchema.safeParse(body);
 
-    // Validate required fields
-    if (!choreId || typeof choreId !== 'string') {
-      return Response.json({ error: 'choreId is required' }, { status: 400 });
+    if (!parsed.success) {
+      return Response.json(formatValidationError(parsed.error), { status: 400 });
     }
+
+    const { choreId, scheduleId, notes, completedAt } = parsed.data;
 
     // Verify chore exists
     const chore = await db.chore.findUnique({ where: { id: choreId } });
@@ -34,8 +36,8 @@ export async function POST(request: Request) {
         choreId,
         userId: session.user.id,
         scheduleId: scheduleId || null,
-        notes: notes?.trim() || null,
-        completedAt: completedAt ? new Date(completedAt) : new Date(),
+        notes: notes ?? null,
+        completedAt: completedAt ?? new Date(),
       },
       include: {
         chore: { select: { id: true, title: true, frequency: true } },

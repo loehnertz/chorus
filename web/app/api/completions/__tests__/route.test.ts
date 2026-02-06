@@ -59,7 +59,8 @@ describe('POST /api/completions', () => {
 
     expect(response.status).toBe(400);
     const body = await response.json();
-    expect(body.error).toBe('choreId is required');
+    expect(body.error).toBe('Validation failed');
+    expect(body.details.fieldErrors).toHaveProperty('choreId');
   });
 
   it('should return 404 when chore does not exist', async () => {

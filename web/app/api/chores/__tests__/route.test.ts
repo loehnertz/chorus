@@ -229,7 +229,8 @@ describe('POST /api/chores', () => {
 
     expect(response.status).toBe(400);
     const body = await response.json();
-    expect(body.error).toBe('Title is required');
+    expect(body.error).toBe('Validation failed');
+    expect(body.details.fieldErrors).toHaveProperty('title');
   });
 
   it('should return 400 when title is empty string', async () => {
@@ -257,7 +258,7 @@ describe('POST /api/chores', () => {
 
     expect(response.status).toBe(400);
     const body = await response.json();
-    expect(body.error).toContain('Invalid frequency');
+    expect(body.error).toBe('Validation failed');
   });
 
   it('should return 400 when assigneeIds is not an array', async () => {
@@ -272,7 +273,8 @@ describe('POST /api/chores', () => {
 
     expect(response.status).toBe(400);
     const body = await response.json();
-    expect(body.error).toBe('assigneeIds must be an array');
+    expect(body.error).toBe('Validation failed');
+    expect(body.details.fieldErrors).toHaveProperty('assigneeIds');
   });
 
   it('should return 500 on database error', async () => {

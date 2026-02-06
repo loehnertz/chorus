@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { requireApprovedUserApi, isErrorResponse } from '@/lib/auth/require-approval';
 import { Frequency } from '@prisma/client';
+import { createChoreSchema, formatValidationError } from '@/lib/validations';
 
 const VALID_FREQUENCIES = Object.values(Frequency);
 
@@ -51,29 +52,19 @@ export async function POST(request: Request) {
     if (isErrorResponse(result)) return result;
 
     const body = await request.json();
-    const { title, frequency, description, assigneeIds } = body;
+    const parsed = createChoreSchema.safeParse(body);
 
-    // Validate required fields
-    if (!title || typeof title !== 'string' || title.trim().length === 0) {
-      return Response.json({ error: 'Title is required' }, { status: 400 });
+    if (!parsed.success) {
+      return Response.json(formatValidationError(parsed.error), { status: 400 });
     }
 
-    if (!frequency || !VALID_FREQUENCIES.includes(frequency)) {
-      return Response.json(
-        { error: `Invalid frequency. Must be one of: ${VALID_FREQUENCIES.join(', ')}` },
-        { status: 400 },
-      );
-    }
-
-    if (assigneeIds !== undefined && !Array.isArray(assigneeIds)) {
-      return Response.json({ error: 'assigneeIds must be an array' }, { status: 400 });
-    }
+    const { title, frequency, description, assigneeIds } = parsed.data;
 
     const chore = await db.chore.create({
       data: {
-        title: title.trim(),
+        title,
         frequency,
-        description: description?.trim() || null,
+        description: description ?? null,
         ...(assigneeIds?.length && {
           assignments: {
             create: assigneeIds.map((userId: string) => ({ userId })),
