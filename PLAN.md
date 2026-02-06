@@ -159,7 +159,7 @@ chorus/
 1. Create Neon Auth server instance (`lib/auth/server.ts`)
 2. Create Neon Auth client instance (`lib/auth/client.ts`)
 3. Set up auth API handlers (`app/api/auth/[...path]/route.ts`)
-4. Configure middleware for route protection (`middleware.ts`)
+4. Configure middleware for route protection (`proxy.ts`)
 5. Define TypeScript types for sessions (`types/auth.ts`)
 6. Create sign-in/sign-up pages with Neon Auth UI components
 7. Implement user sync: On first login, create User record from Neon Auth
@@ -219,6 +219,8 @@ Phase 5 builds the entire dashboard shell and the chore management UI. It introd
 
 All primitives must use `cn()` for class merging and accept a `className` prop for overrides.
 
+All layout surfaces, borders, and text should be derived from semantic CSS variables (`--background`, `--surface`, `--surface-2`, `--foreground`, `--border`, `--border-strong`) so the UI automatically follows system dark mode.
+
 ##### 5.1.1 FrequencyBadge (`components/ui/frequency-badge.tsx`)
 Small pill showing chore frequency. Used everywhere chores appear.
 
@@ -229,22 +231,22 @@ Shape:  rounded-full  px-3  py-1  text-xs  font-medium  font-[var(--font-display
 Variants by frequency:
   DAILY    → bg-[var(--color-terracotta)]/15  text-[var(--color-terracotta)]  border-[var(--color-terracotta)]/30
   WEEKLY   → bg-[var(--color-sage)]/15        text-[var(--color-sage)]        border-[var(--color-sage)]/30
-  MONTHLY  → bg-[var(--color-charcoal)]/10    text-[var(--color-charcoal)]    border-[var(--color-charcoal)]/20
+  MONTHLY  → bg-[var(--color-charcoal)]/10    text-[var(--foreground)]        border-[var(--foreground)]/20
   YEARLY   → bg-[var(--color-cream)]          text-[var(--color-charcoal)]    border-[var(--color-charcoal)]/20
 ```
 
 Each frequency should feel visually distinct at a glance. Daily is warm/urgent (terracotta tint), weekly is calm/routine (sage tint), monthly/yearly are neutral.
 
 ##### 5.1.2 Select (`components/ui/select.tsx`)
-Build on `@radix-ui/react-select`. Match Input styling: h-11, 2px charcoal/20 border, terracotta focus ring. Dropdown menu: `--radius-md`, `--shadow-lifted`, white bg, items highlight with `bg-[var(--color-cream)]` on hover.
+Build on `@radix-ui/react-select`. Match Input styling: h-11, 2px `--border-strong` border, terracotta focus ring. Dropdown menu: `--radius-md`, `--shadow-lifted`, `bg-[var(--surface)]`, items highlight with `bg-[var(--surface-2)]` on hover.
 
 ##### 5.1.3 Textarea (`components/ui/textarea.tsx`)
-Multi-line Input variant: same border, focus ring, padding, radius. Min-height 100px. Used for chore descriptions and completion notes.
+Multi-line Input variant: same border (`--border-strong`), focus ring, padding, radius, `bg-[var(--surface)]`. Min-height 100px. Used for chore descriptions and completion notes.
 
 ##### 5.1.4 Skeleton (`components/ui/skeleton.tsx`)
 Loading placeholder with shimmer animation:
 ```
-Base: bg-[var(--color-cream)]  rounded-[var(--radius-md)]  animate-pulse
+Base: bg-[var(--surface-2)]  rounded-[var(--radius-md)]  animate-pulse
 Variants:
   SkeletonText   → h-4, various widths (w-full, w-3/4, w-1/2)
   SkeletonCard   → full card shape (height ~160px)
@@ -254,8 +256,9 @@ Variants:
 ##### 5.1.5 Toast / Notification
 Use `sonner` library. Position: bottom-center on mobile, bottom-right on desktop.
 ```
-Style: bg-white  rounded-[var(--radius-md)]  shadow-[var(--shadow-lifted)]  border border-[var(--color-cream)]
-       p-4  font-[var(--font-display)]  text-sm
+Style: bg-[var(--surface)]  text-[var(--foreground)]  rounded-[var(--radius-md)]
+       shadow-[var(--shadow-lifted)]  border border-[var(--border)]  p-4
+       font-[var(--font-display)]  text-sm
 Variants (left accent border, 4px):
   Success → border-l-[var(--color-sage)]
   Error   → border-l-red-500
@@ -267,9 +270,9 @@ Auto-dismiss: 4s with smooth slide-out animation.
 Centered placeholder for empty lists.
 ```
 Container:  flex flex-col items-center justify-center  py-16  text-center
-Icon:       48px, stroke-[var(--color-charcoal)]/30, stroke-width 1.5 (Lucide icons)
-Title:      text-lg font-[var(--font-display)] font-medium text-[var(--color-charcoal)]/70  mt-4
-Subtitle:   text-sm text-[var(--color-charcoal)]/50  mt-1  max-w-xs
+Icon:       48px, stroke-[var(--foreground)]/30, stroke-width 1.5 (Lucide icons)
+Title:      text-lg font-[var(--font-display)] font-medium text-[var(--foreground)]/70  mt-5
+Subtitle:   text-sm text-[var(--foreground)]/50  mt-2  max-w-xs
 CTA:        <Button variant="outline" size="sm">  mt-4  (optional)
 
 Props: icon: LucideIcon, title: string, subtitle?: string, ctaLabel?: string, onCtaClick?: () => void, className?: string
@@ -291,11 +294,11 @@ Fixed left, w-64.
 ┌────────────────────┐
 │  🎵 Chorus         │  ← Logo: font-display, text-xl, font-bold, terracotta
 │                    │
-│  ▸ Dashboard       │  ← Active: bg-[var(--color-cream)] text-[var(--color-charcoal)]
-│    Chores          │     Inactive: text-[var(--color-charcoal)]/60 hover:bg-[var(--color-cream)]/50
+│  ▸ Dashboard       │  ← Active: bg-[var(--surface-2)] text-[var(--foreground)]
+│    Chores          │     Inactive: text-[var(--foreground)]/60 hover:bg-[var(--surface-2)]/50
 │    Schedule        │
 │                    │
-│  ─────────────     │  ← Divider: border-[var(--color-cream)]
+│  ─────────────     │  ← Divider: border-[var(--border)]
 │                    │
 │  👤 Alice          │  ← Avatar + name at bottom
 │     Sign Out       │     text-xs, charcoal/50, hover:terracotta
@@ -313,22 +316,22 @@ Lucide icons (20px, stroke-width 1.5):
 ##### 5.2.2 BottomBar (`components/bottom-bar.tsx`) — Mobile (< md:)
 Fixed bottom, h-16.
 ```
-flex justify-around items-center  bg-white  border-t border-[var(--color-cream)]
+flex justify-around items-center  bg-[var(--surface)]  border-t border-[var(--border)]
 shadow-[0_-2px_8px_rgba(61,64,91,0.06)]
 
 Each tab: flex flex-col items-center gap-0.5
   Icon (20px) + label (text-[10px] font-display)
   Active: terracotta icon + text
-  Inactive: charcoal/40 icon + text
+  Inactive: foreground/40 icon + text
 ```
 
 ##### 5.2.3 DashboardLayout (`app/(dashboard)/layout.tsx`)
 Page shell wrapping all dashboard routes.
 ```tsx
-<div className="min-h-screen bg-[var(--color-warm-white)]">
+<div className="min-h-screen bg-[var(--background)]">
   <Sidebar />      {/* hidden below md: */}
   <main className="md:ml-64 pb-20 md:pb-0">
-    <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 md:py-10">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-10 py-7 sm:py-8 md:py-12">
       {children}
     </div>
   </main>
@@ -351,11 +354,11 @@ Layout:
 │  👤 Assigned: Alice, Bob          3 done    │  ← footer: avatars + completion count
 └─────────────────────────────────────────────┘
 
-Card:    bg-white  rounded-[var(--radius-lg)]  p-5  shadow-[var(--shadow-soft)]
-         hover:shadow-[var(--shadow-lifted)]  transition-shadow duration-200
-         border border-transparent hover:border-[var(--color-cream)]  cursor-pointer
-Footer:  flex items-center justify-between  mt-4  pt-3  border-t border-[var(--color-cream)]
-         text-xs  text-[var(--color-charcoal)]/60
+Card:    bg-[var(--surface)]  rounded-[var(--radius-lg)]  p-5 (sm:p-6)  shadow-[var(--shadow-soft)]
+          hover:shadow-[var(--shadow-lifted)]  transition-shadow duration-200
+         border border-transparent hover:border-[var(--border)]  cursor-pointer
+Footer:  flex items-center justify-between  mt-4  pt-3  border-t border-[var(--border)]
+         text-xs  text-[var(--foreground)]/60
 Assignees: flex -space-x-1.5  (overlapping Avatar sm)
 Menu:    Ghost button, MoreHorizontal icon, opens dropdown for Edit/Delete
 
@@ -366,12 +369,12 @@ Staggered delays in lists (0.05s between items).
 ##### 5.3.2 ChoreForm (`components/chore-form.tsx`) — Dialog-based
 Modal form for creating/editing chores. Opens inside a Dialog.
 ```
-Fields (vertical stack, space-y-4):
+Fields (vertical stack, space-y-5):
   1. Title       → Input, required, placeholder "e.g., Vacuum the living room"
   2. Description → Textarea, optional, placeholder "Add details or notes..."
   3. Frequency   → Select with 4 options (Daily/Weekly/Monthly/Yearly), each shows FrequencyBadge inline
   4. Assignees   → Multi-select checkboxes showing Avatar + name
-                   Wrapped in: rounded-[var(--radius-md)] border border-[var(--color-charcoal)]/10 p-3
+                   Wrapped in: rounded-[var(--radius-md)] border border-[var(--border)] p-3
 
 Footer:
   Cancel (ghost) + Save (primary)
@@ -386,7 +389,7 @@ Validation:
 ##### 5.3.3 DashboardStats (`components/dashboard-stats.tsx`)
 Row of stat cards at the top of the dashboard.
 ```
-Container:  grid grid-cols-2 md:grid-cols-4  gap-4
+Container:  grid grid-cols-2 md:grid-cols-4  gap-4 (md:gap-5)
 
 Each stat card:
 ┌──────────────────────┐
@@ -395,7 +398,8 @@ Each stat card:
 │  +3 this week        │  ← text-xs sage (positive) or charcoal/50 (neutral)
 └──────────────────────┘
 
-Card: bg-white  rounded-[var(--radius-md)]  p-4  shadow-[var(--shadow-soft)]  border border-[var(--color-cream)]
+Card: bg-[var(--surface)]  rounded-[var(--radius-md)]  p-4 (sm:p-5)
+      shadow-[var(--shadow-soft)]  border border-[var(--border)]
 
 Stats: "Completed" (total), "This Week" (weekly), "Streak" (consecutive days), "Chores" (total count)
 ```
@@ -404,7 +408,7 @@ Stats: "Completed" (total), "This Week" (weekly), "Streak" (consecutive days), "
 Enhanced checkbox for marking chores as done, larger than generic checkbox.
 ```
 Size:       h-8 w-8  (32px, large touch target)
-Unchecked:  border-2 border-[var(--color-charcoal)]/30  rounded-full  bg-white
+Unchecked:  border-2 border-[var(--border-strong)]  rounded-full  bg-[var(--surface)]
 Hover:      border-[var(--color-sage)]  bg-[var(--color-sage)]/5
 Checked:    bg-[var(--color-sage)]  border-[var(--color-sage)]  text-white
 
@@ -414,7 +418,7 @@ Optional: small confetti/particle celebration effect.
 
 #### 5.4 Pages
 
-##### 5.4.1 Dashboard Page (`app/(dashboard)/page.tsx`)
+##### 5.4.1 Dashboard Page (`app/(dashboard)/dashboard/page.tsx`)
 ```
 Top:     <DashboardStats />
 Middle:  "Today's Tasks" — scheduled chores for today with CompletionCheckbox
@@ -427,9 +431,9 @@ Bottom:  "Recent Activity" — last 5 completions as simple timeline
 ```
 Top:     Page header ("Chores") + <Button>Add Chore</Button> → opens ChoreForm dialog
 Filters: Row of frequency toggle chips to filter (all/daily/weekly/monthly/yearly)
-         Active chip:   bg-[var(--color-terracotta)] text-white
-         Inactive chip: bg-white text-[var(--color-charcoal)]/60 border border-[var(--color-charcoal)]/15
-                        hover:border-[var(--color-charcoal)]/30
+          Active chip:   bg-[var(--color-terracotta)] text-white
+          Inactive chip: bg-[var(--surface)] text-[var(--foreground)]/60 border border-[var(--border-strong)]
+                        hover:border-[var(--foreground)]/30
          Chips: px-3 py-1.5 rounded-full text-sm font-display font-medium cursor-pointer transition-colors
 Grid:    grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3  gap-4  of ChoreCards
          If no chores → <EmptyState icon={ClipboardList} title="No chores yet" subtitle="Add your first chore to get started" cta="Add Chore" />
@@ -442,17 +446,17 @@ Grid:    grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3  gap-4  of ChoreCards
 
 #### 5.6 Text Hierarchy (use consistently across all components)
 ```
-Primary:   text-[var(--color-charcoal)]         — Headings, card titles, labels
-Secondary: text-[var(--color-charcoal)]/70       — Descriptions, metadata, timestamps
-Tertiary:  text-[var(--color-charcoal)]/50       — Placeholders, disabled text, help text
-Muted:     text-[var(--color-charcoal)]/40       — Decorative labels, empty-state hints
+Primary:   text-[var(--foreground)]         — Headings, card titles, labels
+Secondary: text-[var(--foreground)]/70      — Descriptions, metadata, timestamps
+Tertiary:  text-[var(--foreground)]/50      — Placeholders, disabled text, help text
+Muted:     text-[var(--foreground)]/40      — Decorative labels, empty-state hints
 ```
 
 #### 5.7 Form Patterns (use consistently in all forms)
 ```tsx
-<form className="space-y-4">
+<form className="space-y-5">
   <div className="space-y-1.5">
-    <label className="text-sm font-medium font-[var(--font-display)] text-[var(--color-charcoal)]">
+    <label className="text-sm font-medium font-[var(--font-display)] text-[var(--foreground)]">
       Field Label
     </label>
     <Input ... />
@@ -474,11 +478,11 @@ Labels always visible (no floating labels). Errors as red text directly below th
 | Primary CTA | Terracotta fill |
 | Secondary CTA / success | Sage fill |
 | Destructive | Tailwind `red-600` |
-| Page backgrounds | Cream or warm-white |
-| Card backgrounds | White |
-| Borders & dividers | Cream |
-| Subtle borders (inputs, chips) | Charcoal/10 or charcoal/15 |
-| Active/selected state | Cream fill + charcoal text |
+| Page backgrounds | `--background` (system-synced light/dark) |
+| Card backgrounds | `--surface` |
+| Borders & dividers | `--border` |
+| Subtle borders (inputs, chips) | `--border-strong` |
+| Active/selected state | `--surface-2` fill + `--foreground` text |
 
 **Never use raw hex codes** — always reference CSS variables.
 
