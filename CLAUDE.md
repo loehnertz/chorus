@@ -178,6 +178,166 @@ if (!session?.user) {
 // ... handle authenticated request
 ```
 
+## Idiomatic Usage Patterns
+
+Follow these patterns to write clean, maintainable code consistent with modern Next.js and TypeScript best practices.
+
+### Next.js App Router
+
+**Server Components (default)**:
+- Use server components by default for better performance
+- Fetch data directly in components (no useEffect needed)
+- Keep components async when fetching data
+```typescript
+export default async function ChoresPage() {
+  const chores = await prisma.chore.findMany();
+  return <ChoreList chores={chores} />;
+}
+```
+
+**Client Components (when needed)**:
+- Only use `'use client'` when you need:
+  - useState, useEffect, or other React hooks
+  - Event handlers (onClick, onChange)
+  - Browser APIs (localStorage, window)
+  - Neon Auth client hooks (useSession)
+- Keep client components small and leaf-level
+
+**Server Actions**:
+- Use server actions for mutations instead of API routes when possible
+- Mark functions with `'use server'`
+- Revalidate paths/tags after mutations
+```typescript
+'use server'
+export async function createChore(formData: FormData) {
+  const chore = await prisma.chore.create({ ... });
+  revalidatePath('/chores');
+  return chore;
+}
+```
+
+**Route Handlers (API routes)**:
+- Use for external API consumers or when server actions don't fit
+- Always validate auth with `auth.getSession()`
+- Use proper HTTP methods and status codes
+- Return typed JSON responses
+
+### TypeScript
+
+**Strict typing**:
+- Enable strict mode in tsconfig.json
+- Avoid `any` - use `unknown` if type is truly unknown
+- Define interfaces for all data structures
+- Use Prisma-generated types for database models
+
+**Type organization**:
+- Database types: Import from Prisma (`import { Chore, User } from '@prisma/client'`)
+- API types: Define in `types/api.ts`
+- Auth types: Define in `types/auth.ts`
+- Component props: Define inline or in `types/components.ts`
+
+**Useful patterns**:
+```typescript
+// Partial database types
+type ChoreFormData = Pick<Chore, 'title' | 'description' | 'frequency'>;
+
+// API response types
+type ApiResponse<T> = { data: T } | { error: string };
+
+// Zod for runtime validation (if needed)
+import { z } from 'zod';
+const choreSchema = z.object({ title: z.string().min(1), ... });
+```
+
+### Prisma
+
+**Query patterns**:
+```typescript
+// Include relations
+const chore = await prisma.chore.findUnique({
+  where: { id },
+  include: { assignments: { include: { user: true } } }
+});
+
+// Filter and sort
+const chores = await prisma.chore.findMany({
+  where: { frequency: 'DAILY' },
+  orderBy: { createdAt: 'desc' },
+  take: 10
+});
+
+// Transactions for related operations
+await prisma.$transaction([
+  prisma.chore.create({ ... }),
+  prisma.choreAssignment.create({ ... })
+]);
+```
+
+**Best practices**:
+- Use a singleton Prisma client (`lib/db.ts`)
+- Always handle errors from database operations
+- Use `include` judiciously (avoid n+1 queries)
+- Leverage Prisma's type safety (no manual SQL strings)
+
+### TailwindCSS
+
+**Class organization**:
+- Use CSS variables for theme colors (don't hardcode hex values)
+- Responsive design: mobile-first (`md:`, `lg:` breakpoints)
+- Use Tailwind utilities over custom CSS when possible
+- Group classes logically: layout → spacing → colors → typography
+
+**Example**:
+```tsx
+<div className="flex flex-col gap-4 md:flex-row md:gap-6 p-4 bg-[var(--color-cream)] rounded-[var(--radius-md)]">
+```
+
+**Custom styles**:
+- Use `@apply` in CSS files only for repeated patterns
+- Prefer composition over custom classes
+- Keep globals.css minimal (theme variables, base styles only)
+
+### Framer Motion
+
+**Performance**:
+- Animate only `transform` and `opacity` (GPU-accelerated)
+- Use `layout` prop for layout animations
+- Keep animations subtle and fast (200-300ms)
+
+**Common patterns**:
+```tsx
+// Page transitions
+<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+
+// Staggered children
+<motion.div variants={container}>
+  {items.map(item => <motion.div variants={child} key={item.id} />)}
+</motion.div>
+
+// Gesture animations
+<motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+```
+
+### React Best Practices
+
+**Component structure**:
+- One component per file
+- Name files with PascalCase matching component name
+- Keep components small and focused (single responsibility)
+- Extract repeated logic into custom hooks
+
+**State management**:
+- Use server state (fetch in server components) when possible
+- Use client state (useState) only for UI state
+- Avoid prop drilling - use composition or context
+- For global state (if needed), consider Zustand or Context API
+
+**Error handling**:
+- Use error boundaries for component errors
+- Use try/catch in async functions
+- Show user-friendly error messages
+- Log errors for debugging
+
 ## Environment Setup
 
 Required environment variables (see `.env.example`):
