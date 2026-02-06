@@ -133,7 +133,7 @@ Located in `lib/suggestions.ts`, the algorithm prioritizes:
 - `app/(dashboard)/` - Protected dashboard routes with shared layout
 - `app/api/auth/[...path]/` - Neon Auth API handlers
 - `app/api/` - API routes for CRUD operations and task suggestions
-- `components/ui/` - Reusable UI primitives
+- `components/ui/` - Custom UI primitives (built on Radix UI, styled for "Domestic Futurism")
 - `components/` - Feature-specific components (chore-card, slot-picker, etc.)
 - `lib/auth/` - Neon Auth client/server instances
 - `lib/` - Shared utilities (database client, suggestion algorithm)

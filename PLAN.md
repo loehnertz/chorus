@@ -209,9 +209,10 @@ chore-tracker/
    - Configure Jest with Next.js
    - Create test utilities and helpers
    - Add test scripts to package.json
-6. Build UI component library (`components/ui/`):
+6. Build custom UI component library (`components/ui/`):
    - Button, Card, Checkbox, Dialog, Input
-   - Use shadcn/ui or build custom components
+   - Use Radix UI primitives for accessibility (headless components)
+   - Style with TailwindCSS to match "Domestic Futurism" aesthetic
 7. Create base layout and theme system (CSS variables in `globals.css`)
 8. Set up custom fonts (Outfit, Merriweather)
 
