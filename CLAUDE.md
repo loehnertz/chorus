@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Chorus** is a slot-based chore tracking web application for couples and households. The core innovation is a slot-based scheduling system where users can pull tasks from frequency pools (daily, weekly, monthly, yearly) into their schedule.
 
+**Deployment Model**: Each deployment represents a single household - there is no multi-household support. All users in a deployment share the same chore pool. The application is designed to be deployed on Vercel.
+
 ## Tech Stack
 
 - **Framework**: Next.js 14+ with App Router
@@ -54,18 +56,15 @@ The core architectural concept is that chores belong to frequency pools (DAILY, 
 
 ### Key Models & Relationships
 
-```
-Household
-  ├─ members (User[])
-  ├─ chores (Chore[])
-  └─ schedules (Schedule[])
+**Note**: No Household model - all chores are deployment-wide (single household per deployment).
 
-User
-  ├─ household (Household)
+```
+User (extends Neon Auth)
+  ├─ id (UUID from Neon Auth)
   ├─ assignedChores (ChoreAssignment[])
   └─ completions (ChoreCompletion[])
 
-Chore
+Chore (deployment-wide, shared by all users)
   ├─ frequency (DAILY | WEEKLY | MONTHLY | YEARLY)
   ├─ assignments (ChoreAssignment[])
   ├─ schedules (Schedule[])
@@ -89,12 +88,16 @@ Located in `lib/suggestions.ts`, the algorithm prioritizes:
 
 ### Directory Structure
 
-- `app/(auth)/` - Authentication pages (login, signup)
+- `app/(auth)/` - Authentication pages (sign-in, sign-up with Neon Auth UI)
 - `app/(dashboard)/` - Protected dashboard routes with shared layout
+- `app/api/auth/[...path]/` - Neon Auth API handlers
 - `app/api/` - API routes for CRUD operations and task suggestions
 - `components/ui/` - Reusable UI primitives
 - `components/` - Feature-specific components (chore-card, slot-picker, etc.)
-- `lib/` - Shared utilities (auth config, database client, suggestion algorithm)
+- `lib/auth/` - Neon Auth client/server instances
+- `lib/` - Shared utilities (database client, suggestion algorithm)
+- `types/auth.ts` - Neon Auth TypeScript types
+- `middleware.ts` - Neon Auth route protection
 - `prisma/` - Database schema and migrations
 
 ## Design Philosophy: "Domestic Futurism"
@@ -114,12 +117,13 @@ When creating UI components, reference the CSS variables defined in `app/globals
 ## Database Patterns
 
 ### Schema Organization
-- App schema: Contains Household, Chore, Schedule, ChoreCompletion, ChoreAssignment, User
+- App schema: Contains User, Chore, Schedule, ChoreCompletion, ChoreAssignment
 - `neon_auth` schema: Managed by Neon Auth, contains authentication tables (users, sessions, accounts)
-- User model in app schema references Neon Auth user ID
+- User model in app schema uses UUID `id` synced from Neon Auth (no `@default`, managed externally)
+- No Household model - all chores are deployment-wide
 
 ### Creating Chores
-Always associate chores with a household. Frequency is an enum (DAILY, WEEKLY, MONTHLY, YEARLY).
+Chores are deployment-wide and visible to all users. Frequency is an enum (DAILY, WEEKLY, MONTHLY, YEARLY). Use `@default(uuid())` for chore IDs.
 
 ### Scheduling Flow
 1. Create Schedule with `slotType` and `scheduledFor`
@@ -128,43 +132,63 @@ Always associate chores with a household. Frequency is an enum (DAILY, WEEKLY, M
 4. On completion, create ChoreCompletion linking schedule and user
 
 ### Cascading Deletes
-- Deleting a Household cascades to Chores and Schedules
-- Deleting a Chore cascades to Assignments and Completions
+- Deleting a User cascades to ChoreAssignments and ChoreCompletions
+- Deleting a Chore cascades to ChoreAssignments, Schedules, and ChoreCompletions
 - Deleting a Schedule sets ChoreCompletion.scheduleId to null (SetNull)
 
 ## Authentication Flow
 
-Neon Auth client configuration is in `lib/auth.ts`. The app uses:
+Neon Auth is configured via two files:
+- `lib/auth/server.ts` - Server-side auth instance using `createNeonAuth()`
+- `lib/auth/client.ts` - Client-side auth instance for React components
+
+**Key patterns**:
 - Neon Auth managed service (stores auth data in `neon_auth` schema)
 - Session-based authentication with Better Auth SDK
-- Email/password and OAuth (Google) providers
-- Protected routes via middleware
-- User model extension: Maps Neon Auth user ID to app User with household relationship
+- Email/password and OAuth (Google) providers configured in Neon dashboard
+- Protected routes via `middleware.ts` using `auth.middleware()`
+- API route protection via `auth.getSession()` - check for `session?.user`
+- User sync: On first Neon Auth login, create corresponding User record in app schema
 - Database branching: Auth state branches with database for preview environments
+
+**Session access**:
+- Server Components: `const { data: session } = await auth.getSession()`
+- Client Components: `const session = authClient.useSession()`
+- API Routes: `const { data: session } = await auth.getSession()`
 
 ## API Conventions
 
-All API routes follow RESTful patterns:
-- `GET /api/chores` - List all chores for user's household
+All API routes follow RESTful patterns and require authentication:
+- `GET /api/chores` - List all chores (deployment-wide, no household filtering)
 - `POST /api/chores` - Create new chore
 - `GET /api/chores/[id]` - Get single chore
 - `PUT /api/chores/[id]` - Update chore
 - `DELETE /api/chores/[id]` - Delete chore
 
 Special endpoints:
-- `POST /api/schedules/suggest` - Get suggested task for a slot type
+- `POST /api/schedules/suggest` - Get suggested task for a slot type (body: `{ slotType, userId? }`)
 - `POST /api/completions` - Record task completion
+
+**Authentication pattern for API routes**:
+```typescript
+const { data: session } = await auth.getSession();
+if (!session?.user) {
+  return Response.json({ error: 'Unauthorized' }, { status: 401 });
+}
+// ... handle authenticated request
+```
 
 ## Environment Setup
 
 Required environment variables (see `.env.example`):
 ```
 DATABASE_URL="postgresql://..."
-NEON_AUTH_PROJECT_ID="your-project-id"
-NEON_AUTH_API_KEY="your-api-key"
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
-# OAuth providers configured in Neon Auth dashboard
+NEON_AUTH_BASE_URL="https://auth.neon.tech/..."  # From Neon console
+NEON_AUTH_COOKIE_SECRET="generated-secret"        # Generate: openssl rand -base64 32
+# OAuth providers configured in Neon Auth dashboard (no env vars needed)
 ```
+
+**Vercel Deployment**: The application is designed to deploy on Vercel. Set environment variables in Vercel dashboard and ensure `DATABASE_URL` points to your Neon production database.
 
 ## Testing Requirements
 
@@ -192,21 +216,22 @@ All three must pass before creating a commit. No exceptions.
 
 ### Manual Verification
 In addition to automated tests, verify:
-1. **Database integrity**: Use `npx prisma studio` to verify relationships
+1. **Database integrity**: Use `npx prisma studio` to verify relationships and User sync from Neon Auth
 2. **Completion flow**: Create chore → schedule → complete → verify ChoreCompletion
 3. **Suggestion algorithm**: Test that least-recent and never-completed tasks surface correctly
-4. **Multi-user**: Create second user, verify household sharing and separate dashboards
+4. **Multi-user**: Create second user, verify deployment-wide chore sharing and separate dashboards
 5. **Responsive**: Test on mobile viewport, ensure touch-friendly interactions
+6. **Auth flow**: Sign up → User record created → sign out → sign in → session restored
 
 ## Implementation Status
 
-This project is in early development. Refer to PLAN.md for the phased implementation roadmap. Current implementation follows these phases:
-1. ✅ Project Setup & Foundation
-2. Authentication & User Management
-3. Core Data Layer & API
-4. Dashboard & Main UI
-5. Schedule System
-6. Polish & Refinement
+This project is in early development. Refer to PLAN.md for the phased implementation roadmap with semantic versioning:
+1. v0.1.0 - Project Setup & Foundation
+2. v0.2.0 - Authentication & User Management
+3. v0.3.0 - Core Data Layer & API
+4. v0.4.0 - Dashboard & Main UI
+5. v0.5.0 - Schedule System
+6. v1.0.0 - Polish & Refinement (production release)
 
 ## Key Considerations
 
@@ -215,5 +240,18 @@ This project is in early development. Refer to PLAN.md for the phased implementa
 - **Accessibility**: Large touch targets (min 44x44px), semantic HTML, keyboard navigation
 - **Mobile-first**: Design for mobile viewport first, then enhance for desktop
 - **Animation performance**: Use transform and opacity for animations (GPU-accelerated)
-- **Data consistency**: Always verify household ownership before mutations
-- **Auth Integration**: User model in app schema extends Neon Auth user; always sync user ID from `neon_auth` schema
+- **Data consistency**: No household isolation - all chores are deployment-wide and shared
+- **Auth Integration**: User model in app schema extends Neon Auth user (UUID id); sync on first login
+- **Deployment**: Application designed for Vercel; leverage serverless functions and edge runtime where appropriate
+
+## Development Guidelines
+
+**Flexibility**: You are encouraged to suggest improvements or alterations to PLAN.md if you discover better approaches during implementation. The plan is a guide, not a strict contract.
+
+**Communication**: Ask plenty of questions when you need:
+- Clarification on requirements or user intent
+- Direction on architectural decisions
+- Confirmation before making significant changes
+- Feedback on proposed alternatives
+
+Don't hesitate to use the AskUserQuestion tool liberally - it's better to clarify than to make assumptions.

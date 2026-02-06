@@ -4,6 +4,8 @@
 
 Building a shared chore tracking web application for couples/households to manage recurring tasks across different time frequencies (daily, weekly, monthly, yearly). The key innovation is a **slot-based scheduling system** where users can pull tasks from frequency pools into their schedule - for example, picking a yearly deep-cleaning task to tackle during a monthly slot.
 
+**Deployment Model**: Each deployment represents a single household. There is no multi-household support - all users in a deployment share the same chore pool and can see each other's tasks.
+
 The app needs to support:
 - Multi-user authentication with personal dashboards
 - Task assignment to specific people
@@ -36,12 +38,9 @@ A refined, slightly retro-futuristic aesthetic that elevates the mundane task of
 // User model (extends Neon Auth user)
 // Note: Auth data (email, password, sessions) lives in neon_auth schema
 model User {
-  id            String    @id // Maps to Neon Auth user ID
-  name          String?
-  image         String?
-
-  householdId   String?
-  household     Household? @relation(fields: [householdId], references: [id])
+  id    String @id  // UUID from Neon Auth (no @default, synced from auth)
+  name  String?
+  image String?
 
   assignedChores ChoreAssignment[]
   completions    ChoreCompletion[]
@@ -49,38 +48,25 @@ model User {
   updatedAt      DateTime @updatedAt
 }
 
-// Household (shared space for multiple users)
-model Household {
-  id        String   @id @default(cuid())
-  name      String
-  members   User[]
-  chores    Chore[]
-  schedules Schedule[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
 // Chore definition (the pool of tasks)
+// Note: All chores are shared across the deployment (single household model)
 model Chore {
-  id          String   @id @default(cuid())
+  id          String    @id @default(uuid())
   title       String
   description String?
   frequency   Frequency // DAILY, WEEKLY, MONTHLY, YEARLY
-
-  householdId String
-  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
 
   assignments ChoreAssignment[]
   schedules   Schedule[]
   completions ChoreCompletion[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // Assignment of chore to a user
 model ChoreAssignment {
-  id      String @id @default(cuid())
+  id      String @id @default(uuid())
   userId  String
   user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   choreId String
@@ -93,31 +79,28 @@ model ChoreAssignment {
 
 // Scheduled instance (slot-based system)
 model Schedule {
-  id          String    @id @default(cuid())
-  choreId     String
-  chore       Chore     @relation(fields: [choreId], references: [id], onDelete: Cascade)
-
-  householdId String
-  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  id           String    @id @default(uuid())
+  choreId      String
+  chore        Chore     @relation(fields: [choreId], references: [id], onDelete: Cascade)
 
   scheduledFor DateTime  // When this task should be done
   slotType     Frequency // What kind of slot (WEEKLY, MONTHLY, etc)
-  suggested    Boolean @default(true) // Was this auto-suggested or manually selected
+  suggested    Boolean   @default(true) // Was this auto-suggested or manually selected
 
   completions ChoreCompletion[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // Completion record
 model ChoreCompletion {
-  id          String   @id @default(cuid())
-  choreId     String
-  chore       Chore    @relation(fields: [choreId], references: [id], onDelete: Cascade)
+  id         String    @id @default(uuid())
+  choreId    String
+  chore      Chore     @relation(fields: [choreId], references: [id], onDelete: Cascade)
 
-  scheduleId  String?
-  schedule    Schedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  scheduleId String?
+  schedule   Schedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
 
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -134,7 +117,7 @@ enum Frequency {
 }
 ```
 
-**Note**: Authentication tables (users, sessions, accounts, verification tokens) are managed by Neon Auth in the `neon_auth` schema. Our app schema only includes the User model extension for household/chore relationships.
+**Note**: Authentication tables (users, sessions, accounts, verification tokens) are managed by Neon Auth in the `neon_auth` schema. Our app schema only includes the User model extension for chore relationships. All chores are shared across the deployment (no household isolation).
 
 ## Project Structure
 
@@ -142,10 +125,10 @@ enum Frequency {
 chore-tracker/
 ├── app/
 │   ├── (auth)/
-│   │   ├── login/
-│   │   │   └── page.tsx
-│   │   └── signup/
-│   │       └── page.tsx
+│   │   ├── sign-in/
+│   │   │   └── page.tsx            # Sign in page (Neon Auth UI)
+│   │   └── sign-up/
+│   │       └── page.tsx            # Sign up page (Neon Auth UI)
 │   ├── (dashboard)/
 │   │   ├── layout.tsx              # Dashboard layout with nav
 │   │   ├── page.tsx                # Personal dashboard
@@ -155,9 +138,12 @@ chore-tracker/
 │   │   │   ├── page.tsx            # Chore pool management
 │   │   │   └── [id]/
 │   │   │       └── page.tsx        # Edit chore
-│   │   └── household/
-│   │       └── page.tsx            # Household settings
+│   │   └── settings/
+│   │       └── page.tsx            # User settings (profile, preferences)
 │   ├── api/
+│   │   ├── auth/
+│   │   │   └── [...path]/
+│   │   │       └── route.ts        # Neon Auth handlers
 │   │   ├── chores/
 │   │   │   ├── route.ts            # CRUD operations
 │   │   │   └── [id]/
@@ -187,7 +173,9 @@ chore-tracker/
 │   ├── slot-picker.tsx             # Pick task from pool UI
 │   └── user-avatar.tsx
 ├── lib/
-│   ├── auth.ts                     # Neon Auth client & utilities
+│   ├── auth/
+│   │   ├── server.ts               # Neon Auth server instance
+│   │   └── client.ts               # Neon Auth client instance
 │   ├── db.ts                       # Prisma client
 │   ├── suggestions.ts              # Task suggestion algorithm
 │   └── utils.ts                    # Utility functions
@@ -197,7 +185,9 @@ chore-tracker/
 ├── public/
 │   └── fonts/
 ├── types/
-│   └── index.ts
+│   ├── auth.ts                     # Neon Auth session types
+│   └── index.ts                    # General types
+├── middleware.ts                   # Neon Auth route protection
 ├── .env.example
 ├── .env.local
 ├── next.config.js
@@ -208,7 +198,7 @@ chore-tracker/
 
 ## Implementation Phases
 
-### Phase 1: Project Setup & Foundation
+### Phase 1: Project Setup & Foundation (v0.1.0)
 1. Initialize Next.js project with TypeScript
 2. Install dependencies (Prisma, Better Auth SDK, Framer Motion, TailwindCSS)
 3. Set up Neon database and enable Neon Auth
@@ -217,14 +207,16 @@ chore-tracker/
 6. Create base layout and theme system (CSS variables)
 7. Set up custom fonts (Outfit, Merriweather)
 
-### Phase 2: Authentication & User Management
-1. Configure Neon Auth with Better Auth SDK
-2. Create login/signup pages with the aesthetic (using Neon Auth UI components)
-3. Set up session management and protected routes
-4. Build household creation/joining flow
-5. Create user profile extension (link Neon Auth user to app User model)
+### Phase 2: Authentication & User Management (v0.2.0)
+1. Create Neon Auth server instance (`lib/auth/server.ts`)
+2. Create Neon Auth client instance (`lib/auth/client.ts`)
+3. Set up auth API handlers (`app/api/auth/[...path]/route.ts`)
+4. Configure middleware for route protection (`middleware.ts`)
+5. Create sign-in/sign-up pages with Neon Auth UI components
+6. Set up user sync: On first login, create User record from Neon Auth user
+7. Define TypeScript types for sessions (`types/auth.ts`)
 
-### Phase 3: Core Data Layer & API
+### Phase 3: Core Data Layer & API (v0.3.0)
 1. Implement Prisma client setup
 2. Create API routes for:
    - Chores CRUD
@@ -235,7 +227,7 @@ chore-tracker/
    - Suggest tasks from appropriate frequency pools
    - Allow manual override
 
-### Phase 4: Dashboard & Main UI
+### Phase 4: Dashboard & Main UI (v0.4.0)
 1. Build personal dashboard:
    - "Today's Tasks" section
    - "Your Assigned Chores" section
@@ -246,7 +238,7 @@ chore-tracker/
    - Assign to users
 3. Implement completion flow with animations
 
-### Phase 5: Schedule System
+### Phase 5: Schedule System (v0.5.0)
 1. Build calendar/schedule view
 2. Implement slot creation:
    - Weekly slots → pull from daily/monthly pools
@@ -254,7 +246,7 @@ chore-tracker/
 3. Create slot picker UI with suggestions
 4. Add drag-and-drop or selection interface
 
-### Phase 6: Polish & Refinement
+### Phase 6: Polish & Refinement (v1.0.0)
 1. Add animations with Framer Motion:
    - Page transitions
    - Completion celebrations
@@ -276,7 +268,6 @@ chore-tracker/
 
 function suggestTask(
   slotType: Frequency,
-  householdId: string,
   userId?: string
 ): Promise<Chore>
 ```
@@ -329,26 +320,27 @@ function suggestTask(
 # Database
 DATABASE_URL="postgresql://..."
 
-# Neon Auth
-NEON_AUTH_PROJECT_ID="your-project-id"
-NEON_AUTH_API_KEY="your-api-key"
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
+# Neon Auth (from Neon console)
+NEON_AUTH_BASE_URL="https://auth.neon.tech/..."  # Your Neon Auth URL
+NEON_AUTH_COOKIE_SECRET="generated-secret-key"    # Generate with: openssl rand -base64 32
 
-# OAuth (configured in Neon Auth dashboard)
-# GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are set in Neon console
+# OAuth providers configured in Neon Auth dashboard
+# (No client IDs/secrets needed in env - managed by Neon Auth)
 ```
 
 ## Verification & Testing
 
 ### End-to-End Testing Flow
-1. **Setup**:
-   - Create account / login
-   - Create or join household
+1. **Authentication**:
+   - Sign up with email/password
+   - Sign out and sign back in
+   - Verify User record created in database
 
 2. **Chore Management**:
    - Add chores in each frequency category (daily, weekly, monthly, yearly)
    - Assign chores to users
    - Edit and delete chores
+   - Verify all users can see all chores (shared deployment)
 
 3. **Dashboard**:
    - View personal dashboard
@@ -371,10 +363,11 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"
    - Complete scheduled task
 
 6. **Multi-User**:
-   - Invite second user to household
+   - Create second user account
    - Assign chores to different people
    - Verify each user sees their own dashboard
-   - Verify both can see and complete shared tasks
+   - Verify both can see and complete all chores (deployment-wide sharing)
+   - Verify completion tracking per user
 
 7. **Responsive**:
    - Test on mobile device
@@ -387,10 +380,11 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"
 npx prisma studio
 
 # Check:
-# - Users are created with household relationship
-# - Chores are categorized correctly
+# - Users synced from Neon Auth (id, name, image)
+# - Chores are categorized correctly by frequency
 # - Schedules reference chores properly
-# - Completions are recorded with timestamps
+# - Completions are recorded with timestamps and user attribution
+# - ChoreAssignments link users to chores correctly
 ```
 
 ### Visual Verification
@@ -402,13 +396,18 @@ npx prisma studio
 
 ## Deployment Preparation
 
+**Target Platform**: Vercel (the application is specifically designed for Vercel deployment)
+
 1. Set up Neon PostgreSQL database with Neon Auth enabled
 2. Configure OAuth providers in Neon Auth dashboard
-3. Configure environment variables in Vercel (Neon Auth credentials)
+3. Configure environment variables in Vercel dashboard:
+   - `DATABASE_URL` - Neon production database URL
+   - `NEON_AUTH_BASE_URL` - Neon Auth URL from console
+   - `NEON_AUTH_COOKIE_SECRET` - Generated secret (openssl rand -base64 32)
 4. Run migrations: `npx prisma migrate deploy`
 5. Deploy to Vercel
 6. Test production authentication flow (Neon Auth handles auth state branching)
-7. Verify database connections
+7. Verify database connections and user sync
 
 ## Future Enhancements (Out of Scope)
 - Push notifications for task reminders
