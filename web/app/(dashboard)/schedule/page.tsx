@@ -1,23 +1,126 @@
-import { CalendarDays } from 'lucide-react'
-import { EmptyState } from '@/components/ui/empty-state'
+import { requireApprovedUser } from '@/lib/auth/require-approval'
+import { db } from '@/lib/db'
+import { startOfTodayUtc } from '@/lib/date'
+import { ScheduleView } from '@/components/schedule-view'
 
-export default function SchedulePage() {
+function parseMonthParam(raw: string | undefined): { year: number; monthIndex: number } | null {
+  if (!raw) return null
+  const m = raw.match(/^(\d{4})-(\d{2})$/)
+  if (!m) return null
+  const year = Number(m[1])
+  const month = Number(m[2])
+  if (!Number.isFinite(year) || !Number.isFinite(month)) return null
+  if (month < 1 || month > 12) return null
+  return { year, monthIndex: month - 1 }
+}
+
+function parseDayParam(raw: string | undefined): string | null {
+  if (!raw) return null
+  const ok = /^\d{4}-\d{2}-\d{2}$/.test(raw)
+  return ok ? raw : null
+}
+
+export default async function SchedulePage({
+  searchParams,
+}: {
+  searchParams?: { month?: string; day?: string }
+}) {
+  const session = await requireApprovedUser()
+  const userId = session.user.id
+
+  const now = new Date()
+  const parsedMonth = parseMonthParam(searchParams?.month)
+  const year = parsedMonth?.year ?? now.getUTCFullYear()
+  const monthIndex = parsedMonth?.monthIndex ?? now.getUTCMonth()
+
+  const initialSelectedDayKey = parseDayParam(searchParams?.day)
+
+  const monthStart = new Date(Date.UTC(year, monthIndex, 1))
+  const monthEnd = new Date(Date.UTC(year, monthIndex + 1, 1))
+
+  const upcomingStart = startOfTodayUtc(now)
+  const upcomingEnd = new Date(upcomingStart)
+  upcomingEnd.setUTCDate(upcomingEnd.getUTCDate() + 14)
+
+  const [chores, monthSchedulesRaw, upcomingRaw] = await Promise.all([
+    db.chore.findMany({
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        frequency: true,
+        assignments: { select: { userId: true } },
+      },
+      orderBy: { title: 'asc' },
+    }),
+    db.schedule.findMany({
+      where: { scheduledFor: { gte: monthStart, lt: monthEnd } },
+      include: {
+        chore: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            frequency: true,
+            assignments: { select: { userId: true } },
+          },
+        },
+        completions: { where: { userId }, select: { id: true } },
+      },
+      orderBy: { scheduledFor: 'asc' },
+    }),
+    db.schedule.findMany({
+      where: { scheduledFor: { gte: upcomingStart, lt: upcomingEnd } },
+      include: {
+        chore: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            frequency: true,
+            assignments: { select: { userId: true } },
+          },
+        },
+        completions: { where: { userId }, select: { id: true } },
+      },
+      orderBy: { scheduledFor: 'asc' },
+    }),
+  ])
+
+  const mappedChores = chores.map((c) => ({
+    id: c.id,
+    title: c.title,
+    description: c.description,
+    frequency: c.frequency,
+    assigneeIds: c.assignments.map((a) => a.userId),
+  }))
+
+  const mapSchedule = (s: (typeof monthSchedulesRaw)[number]) => ({
+    id: s.id,
+    scheduledFor: s.scheduledFor.toISOString(),
+    slotType: s.slotType,
+    suggested: s.suggested,
+    completed: s.completions.length > 0,
+    chore: {
+      id: s.chore.id,
+      title: s.chore.title,
+      description: s.chore.description,
+      frequency: s.chore.frequency,
+      assigneeIds: s.chore.assignments.map((a) => a.userId),
+    },
+  })
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-[var(--font-display)] font-bold text-[var(--foreground)]">
-          Schedule
-        </h1>
-        <p className="mt-1 text-sm text-[var(--foreground)]/70">
-          Calendar and slot planning arrives in Phase 6.
-        </p>
-      </div>
-
-      <EmptyState
-        icon={CalendarDays}
-        title="Scheduling is coming soon"
-        subtitle="You will be able to plan slots and accept cascade suggestions in Phase 6."
-      />
-    </div>
+    <ScheduleView
+      userId={userId}
+      year={year}
+      monthIndex={monthIndex}
+      initialSelectedDayKey={initialSelectedDayKey ?? undefined}
+      chores={mappedChores}
+      monthSchedules={monthSchedulesRaw.map(mapSchedule)}
+      upcomingSchedules={upcomingRaw.map(mapSchedule)}
+    />
   )
 }
+
+export const dynamic = 'force-dynamic'
