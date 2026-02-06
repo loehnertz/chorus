@@ -38,6 +38,9 @@
   --accent: var(--color-cream);
 
   color-scheme: light dark;
+
+  /* Tailwind focus ring offset should match page background (esp. dark mode) */
+  --tw-ring-offset-color: var(--background);
 }
 
 @media (prefers-color-scheme: dark) {
