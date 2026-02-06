@@ -12,9 +12,10 @@ datasource db {
 // User model (extends Neon Auth user)
 // Note: Auth data (email, password, sessions) lives in neon_auth schema
 model User {
-  id    String @id  // UUID from Neon Auth (no @default, synced from auth)
-  name  String?
-  image String?
+  id       String  @id  // UUID from Neon Auth (no @default, synced from auth)
+  name     String?
+  image    String?
+  approved Boolean @default(false) // Admin must approve before user can access data
 
   assignedChores ChoreAssignment[]
   completions    ChoreCompletion[]
