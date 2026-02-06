@@ -52,7 +52,6 @@ export const createCompletionSchema = z.object({
 export const assignChoreSchema = z.object({
   userId: z.string().min(1, 'userId is required'),
 });
-
 export const createScheduleSchema = z.object({
   choreId: z.string().transform((s) => s.trim()).pipe(z.string().min(1, 'choreId is required')),
   scheduledFor: z.coerce.date({ message: 'scheduledFor must be a valid date' }),

@@ -197,29 +197,19 @@ chorus/
 9. Write phase summary document: `web/docs/PHASE_3_SUMMARY.md`
 
 ### Phase 4: Suggestion Algorithm & Schedules (v0.4.0)
-1. Build cascade suggestion algorithm (`lib/suggestions.ts`):
-   - Suggest which chore to cascade down for a given frequency level
-   - Prioritize never-completed chores
+1. Build task suggestion algorithm (`lib/suggestions.ts`):
+   - Prioritize never-completed tasks
    - Sort by least recently completed
    - Respect user assignments
    - Cascade one level only (daily←weekly, weekly←monthly, monthly←yearly)
-2. Build pace warning logic (`lib/suggestions.ts`):
-   - Compare remaining chores at each level vs remaining time in the cycle
-   - Warn when behind (e.g., 3 yearly chores unscheduled with only 2 months left)
-3. Write comprehensive tests for suggestion algorithm and pace warnings
-4. Create Schedules API routes:
-   - `GET /api/schedules` - List schedules (filterable by date range, frequency)
-   - `POST /api/schedules` - Create schedule (assign a chore to a specific date)
-   - `POST /api/schedules/suggest` - Get suggested cascade chore for a frequency level
+2. Write comprehensive tests for suggestion algorithm
+3. Create Schedules API routes:
+   - `GET /api/schedules` - List schedules
+   - `POST /api/schedules` - Create schedule
+   - `POST /api/schedules/suggest` - Get suggested task for slot
    - `DELETE /api/schedules/[id]` - Delete schedule
-   - **IMPORTANT**: All routes must use `requireApprovedUser()` for approval checking
-5. Add Zod validation for schedule endpoints:
-   - Validate schedule creation payloads (choreId, scheduledFor date, slotType)
-   - Validate suggestion request (currentFrequency, optional userId)
-   - Validate query params for listing (date range, frequency filter)
-6. Write API route tests for all schedule endpoints
-7. Test suggestion algorithm with various scenarios (empty pools, all completed, overflow)
-8. Write phase summary document: `web/docs/PHASE_4_SUMMARY.md`
+4. Write API route tests for schedules
+5. Test suggestion algorithm with various scenarios
 
 ### Phase 5: Dashboard & Main UI (v0.5.0)
 
@@ -586,12 +576,6 @@ function suggestCascadedChore(
   currentFrequency: Frequency,
   userId?: string
 ): Promise<Chore>
-
-// Check if user is behind on cascade pace:
-// Compares unscheduled chores at each level vs remaining cycles
-// e.g., 3 yearly chores unscheduled + only 2 months left → warning
-
-function checkCascadePace(): Promise<PaceWarning[]>
 ```
 
 ### Cascade System Rules

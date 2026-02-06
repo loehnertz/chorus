@@ -280,7 +280,6 @@ describe('listSchedulesQuerySchema', () => {
     expect(result.success).toBe(false);
   });
 });
-
 describe('formatValidationError', () => {
   it('should format field errors', () => {
     const result = createChoreSchema.safeParse({ frequency: 'INVALID' });
