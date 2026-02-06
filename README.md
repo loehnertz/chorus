@@ -28,21 +28,49 @@ chorus helps you organize household chores using frequency pools (daily, weekly,
 - **Testing**: Jest + React Testing Library
 - **Deployment**: Vercel
 
+## Project Structure
+
+The Next.js application lives in the `web/` directory:
+
+```
+chorus/                  # Repository root
+├── web/                # Next.js application (work here!)
+│   ├── app/           # Next.js App Router pages
+│   ├── components/    # React components
+│   ├── lib/           # Utilities and shared logic
+│   ├── prisma/        # Database schema
+│   └── ...
+├── CLAUDE.md          # Development documentation
+├── PLAN.md            # Implementation roadmap
+└── README.md          # This file
+```
+
+**All development work happens in the `web/` directory.**
+
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+ and npm
 - Neon account (for database and auth)
+- Vercel CLI (optional, for environment sync)
 
 ### Development Setup
 
 ```bash
+# Navigate to the web directory
+cd web
+
 # Install dependencies
 npm install
 
-# Set up environment variables (see .env.example)
-cp .env.example .env.local
+# Link to Vercel project (optional, to pull environment variables)
+vercel link
+vercel env pull .env.development.local
+
+# Or manually set up environment variables
+cp .env .env.local
+# Edit .env.local with your database and auth credentials
 
 # Set up database and run migrations
 npx prisma migrate dev
@@ -51,12 +79,17 @@ npx prisma migrate dev
 npm run dev
 ```
 
-Visit `http://localhost:3000` to see the app.
+Visit `http://localhost:3001` to see the app.
 
 ### Common Commands
 
+**Run all commands from the `web/` directory:**
+
 ```bash
-npm run dev              # Start development server
+cd web  # Always navigate here first!
+
+# Development
+npm run dev              # Start development server (port 3001)
 npm run build            # Build for production
 npm run lint             # Run ESLint
 npm run test             # Run unit tests
@@ -68,18 +101,18 @@ npm run lint && npm run test && npm run build
 # Database
 npx prisma migrate dev   # Create and apply migrations
 npx prisma studio        # Open Prisma Studio GUI
-npx prisma db seed       # Run seed script
+npx prisma generate      # Regenerate Prisma Client
 ```
 
 ## Project Status
 
-🚧 **In Active Development** - Currently implementing Phase 1 (v0.1.0)
+🚧 **In Active Development** - Phase 1 complete, ready for Phase 2
 
 See [PLAN.md](./PLAN.md) for the complete implementation roadmap and architecture details.
 
 **Phases**:
-1. v0.1.0 - Foundation & Setup ⏳
-2. v0.2.0 - Authentication & User Management
+1. v0.1.0 - Foundation & Setup ✅
+2. v0.2.0 - Authentication & User Management ⏳
 3. v0.3.0 - Basic CRUD APIs
 4. v0.4.0 - Suggestion Algorithm & Schedules
 5. v0.5.0 - Dashboard & Main UI
