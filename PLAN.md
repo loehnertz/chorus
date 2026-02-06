@@ -122,78 +122,17 @@ enum Frequency {
 ## Project Structure
 
 ```
-chore-tracker/
-├── app/
-│   ├── (auth)/
-│   │   ├── sign-in/
-│   │   │   └── page.tsx            # Sign in page (Neon Auth UI)
-│   │   └── sign-up/
-│   │       └── page.tsx            # Sign up page (Neon Auth UI)
-│   ├── (dashboard)/
-│   │   ├── layout.tsx              # Dashboard layout with nav
-│   │   ├── page.tsx                # Personal dashboard
-│   │   ├── schedule/
-│   │   │   └── page.tsx            # Schedule/calendar view
-│   │   ├── chores/
-│   │   │   ├── page.tsx            # Chore pool management
-│   │   │   └── [id]/
-│   │   │       └── page.tsx        # Edit chore
-│   │   └── settings/
-│   │       └── page.tsx            # User settings (profile, preferences)
-│   ├── api/
-│   │   ├── auth/
-│   │   │   └── [...path]/
-│   │   │       └── route.ts        # Neon Auth handlers
-│   │   ├── chores/
-│   │   │   ├── route.ts            # CRUD operations
-│   │   │   └── [id]/
-│   │   │       └── route.ts
-│   │   ├── schedules/
-│   │   │   ├── route.ts
-│   │   │   └── suggest/
-│   │   │       └── route.ts        # Task suggestion algorithm
-│   │   └── completions/
-│   │       └── route.ts
-│   ├── layout.tsx
-│   ├── page.tsx                    # Landing page
-│   └── globals.css
-├── components/
-│   ├── ui/
-│   │   ├── button.tsx
-│   │   ├── card.tsx
-│   │   ├── checkbox.tsx
-│   │   ├── dialog.tsx
-│   │   └── input.tsx
-│   ├── chore-card.tsx              # Individual chore display
-│   ├── chore-form.tsx              # Create/edit chore
-│   ├── completion-modal.tsx        # Task completion celebration
-│   ├── dashboard-stats.tsx         # Stats widget
-│   ├── frequency-badge.tsx         # Visual frequency indicator
-│   ├── schedule-calendar.tsx       # Calendar view
-│   ├── slot-picker.tsx             # Pick task from pool UI
-│   └── user-avatar.tsx
-├── lib/
-│   ├── auth/
-│   │   ├── server.ts               # Neon Auth server instance
-│   │   └── client.ts               # Neon Auth client instance
-│   ├── db.ts                       # Prisma client
-│   ├── suggestions.ts              # Task suggestion algorithm
-│   └── utils.ts                    # Utility functions
-├── prisma/
-│   ├── schema.prisma
-│   └── seed.ts
-├── public/
-│   └── fonts/
-├── types/
-│   ├── auth.ts                     # Neon Auth session types
-│   └── index.ts                    # General types
-├── middleware.ts                   # Neon Auth route protection
-├── .env.example
-├── .env.local
-├── next.config.js
-├── package.json
-├── tailwind.config.ts
-└── tsconfig.json
+chorus/
+├── web/                # Next.js application
+│   ├── app/            # App Router (pages, layouts, API routes)
+│   ├── components/     # React components (ui/, feature components)
+│   ├── lib/            # Utilities (auth/, db, suggestions)
+│   ├── prisma/         # Schema and migrations
+│   ├── types/          # TypeScript type definitions
+│   └── public/         # Static assets
+├── CLAUDE.md
+├── PLAN.md
+└── README.md
 ```
 
 ## Implementation Phases
@@ -239,14 +178,23 @@ chore-tracker/
    - `PUT /api/chores/[id]` - Update chore
    - `DELETE /api/chores/[id]` - Delete chore
    - **IMPORTANT**: All routes must use `requireApprovedUser()` for approval checking
-3. Create Completions API routes:
+3. Create ChoreAssignment API routes:
+   - `POST /api/chores/[id]/assignments` - Assign chore to user
+   - `DELETE /api/chores/[id]/assignments/[userId]` - Unassign chore from user
+   - **IMPORTANT**: All routes must use `requireApprovedUser()` for approval checking
+4. Create Completions API routes:
    - `POST /api/completions` - Record completion
    - `GET /api/completions` - List completions (with filters)
    - **IMPORTANT**: All routes must use `requireApprovedUser()` for approval checking
-4. Write API route tests for all endpoints
-5. Create seed script (`prisma/seed.ts`) with sample data
-6. Test CRUD operations with Prisma Studio
-7. Write phase summary document: `web/docs/PHASE_3_SUMMARY.md`
+5. Add input validation with Zod:
+   - Define Zod schemas for all API request bodies
+   - Validate chore creation/update payloads (title required, valid frequency, etc.)
+   - Validate completion payloads (valid choreId, optional notes, etc.)
+   - Return structured validation errors in API responses
+6. Write API route tests for all endpoints
+7. Create seed script (`prisma/seed.ts`) with sample data
+8. Test CRUD operations with Prisma Studio
+9. Write phase summary document: `web/docs/PHASE_3_SUMMARY.md`
 
 ### Phase 4: Suggestion Algorithm & Schedules (v0.4.0)
 1. Build task suggestion algorithm (`lib/suggestions.ts`):
@@ -480,6 +428,3 @@ npx prisma studio
 - Multi-household support per user
 
 ---
-
-**Estimated Development Time**: 12-16 hours for core functionality + polish
-**Complexity**: Medium - well-defined requirements with some algorithmic complexity in the suggestion system
