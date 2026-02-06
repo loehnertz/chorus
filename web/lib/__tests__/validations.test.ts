@@ -3,6 +3,9 @@ import {
   updateChoreSchema,
   createCompletionSchema,
   assignChoreSchema,
+  createScheduleSchema,
+  scheduleSuggestSchema,
+  listSchedulesQuerySchema,
   formatValidationError,
 } from '../validations';
 
@@ -196,6 +199,84 @@ describe('assignChoreSchema', () => {
 
   it('should reject missing userId', () => {
     const result = assignChoreSchema.safeParse({});
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('createScheduleSchema', () => {
+  it('should validate a valid schedule', () => {
+    const result = createScheduleSchema.safeParse({
+      choreId: 'chore-1',
+      scheduledFor: '2026-02-01T00:00:00Z',
+      slotType: 'DAILY',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.choreId).toBe('chore-1');
+      expect(result.data.scheduledFor).toBeInstanceOf(Date);
+      expect(result.data.suggested).toBe(true);
+    }
+  });
+
+  it('should reject empty choreId', () => {
+    const result = createScheduleSchema.safeParse({
+      choreId: '   ',
+      scheduledFor: '2026-02-01T00:00:00Z',
+      slotType: 'DAILY',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject invalid slotType', () => {
+    const result = createScheduleSchema.safeParse({
+      choreId: 'chore-1',
+      scheduledFor: '2026-02-01T00:00:00Z',
+      slotType: 'HOURLY',
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('scheduleSuggestSchema', () => {
+  it('should accept currentFrequency', () => {
+    const result = scheduleSuggestSchema.safeParse({ currentFrequency: 'DAILY' });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.currentFrequency).toBe('DAILY');
+    }
+  });
+
+  it('should accept slotType alias and normalize to currentFrequency', () => {
+    const result = scheduleSuggestSchema.safeParse({ slotType: 'WEEKLY' });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.currentFrequency).toBe('WEEKLY');
+    }
+  });
+
+  it('should reject when neither currentFrequency nor slotType provided', () => {
+    const result = scheduleSuggestSchema.safeParse({});
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('listSchedulesQuerySchema', () => {
+  it('should validate empty query', () => {
+    const result = listSchedulesQuerySchema.safeParse({});
+    expect(result.success).toBe(true);
+  });
+
+  it('should coerce from/to to Dates', () => {
+    const result = listSchedulesQuerySchema.safeParse({ from: '2026-01-01', to: '2026-01-31' });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.from).toBeInstanceOf(Date);
+      expect(result.data.to).toBeInstanceOf(Date);
+    }
+  });
+
+  it('should reject when from is after to', () => {
+    const result = listSchedulesQuerySchema.safeParse({ from: '2026-02-01', to: '2026-01-01' });
     expect(result.success).toBe(false);
   });
 });
