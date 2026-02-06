@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "WebFetch(domain:neon.com)",
-      "Bash(git add:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nUpdate authentication to Neon Auth and add project guidance\n\n- Switch from NextAuth.js v5 to Neon Auth \\(built on Better Auth\\)\n- Simplify database schema by removing auth models \\(managed in neon_auth schema\\)\n- Create CLAUDE.md with architecture, testing requirements, and development workflow\n- Add pre-commit workflow: lint → test → build\n- Require unit tests for all features\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
-    ]
-  }
-}

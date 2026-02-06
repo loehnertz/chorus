@@ -198,63 +198,117 @@ chore-tracker/
 
 ## Implementation Phases
 
-### Phase 1: Project Setup & Foundation (v0.1.0)
+### Phase 1: Foundation & Setup (v0.1.0)
 1. Initialize Next.js project with TypeScript
-2. Install dependencies (Prisma, Better Auth SDK, Framer Motion, TailwindCSS)
+2. Install dependencies:
+   - Core: Prisma, Neon Auth SDK, TailwindCSS, Framer Motion
+   - Testing: Jest, React Testing Library, @testing-library/jest-dom
 3. Set up Neon database and enable Neon Auth
-4. Set up Prisma with schema
-5. Initialize Neon Auth client and configure providers
-6. Create base layout and theme system (CSS variables)
-7. Set up custom fonts (Outfit, Merriweather)
+4. Configure Prisma with schema and generate client
+5. Set up testing infrastructure:
+   - Configure Jest with Next.js
+   - Create test utilities and helpers
+   - Add test scripts to package.json
+6. Build UI component library (`components/ui/`):
+   - Button, Card, Checkbox, Dialog, Input
+   - Use shadcn/ui or build custom components
+7. Create base layout and theme system (CSS variables in `globals.css`)
+8. Set up custom fonts (Outfit, Merriweather)
 
 ### Phase 2: Authentication & User Management (v0.2.0)
 1. Create Neon Auth server instance (`lib/auth/server.ts`)
 2. Create Neon Auth client instance (`lib/auth/client.ts`)
 3. Set up auth API handlers (`app/api/auth/[...path]/route.ts`)
 4. Configure middleware for route protection (`middleware.ts`)
-5. Create sign-in/sign-up pages with Neon Auth UI components
-6. Set up user sync: On first login, create User record from Neon Auth user
-7. Define TypeScript types for sessions (`types/auth.ts`)
+5. Define TypeScript types for sessions (`types/auth.ts`)
+6. Create sign-in/sign-up pages with Neon Auth UI components
+7. Implement user sync: On first login, create User record from Neon Auth
+8. Write tests for auth utilities and user sync logic
+9. Verify auth flow end-to-end (signup → login → session)
 
-### Phase 3: Core Data Layer & API (v0.3.0)
-1. Implement Prisma client setup
-2. Create API routes for:
-   - Chores CRUD
-   - Schedule management
-   - Completion tracking
-3. Build task suggestion algorithm:
-   - Check last completion dates
-   - Suggest tasks from appropriate frequency pools
-   - Allow manual override
+### Phase 3: Basic CRUD APIs (v0.3.0)
+1. Implement Prisma client setup (`lib/db.ts`)
+2. Create Chores API routes:
+   - `GET /api/chores` - List all chores
+   - `POST /api/chores` - Create chore
+   - `GET /api/chores/[id]` - Get single chore
+   - `PUT /api/chores/[id]` - Update chore
+   - `DELETE /api/chores/[id]` - Delete chore
+3. Create Completions API routes:
+   - `POST /api/completions` - Record completion
+   - `GET /api/completions` - List completions (with filters)
+4. Write API route tests for all endpoints
+5. Create seed script (`prisma/seed.ts`) with sample data
+6. Test CRUD operations with Prisma Studio
 
-### Phase 4: Dashboard & Main UI (v0.4.0)
-1. Build personal dashboard:
+### Phase 4: Suggestion Algorithm & Schedules (v0.4.0)
+1. Build task suggestion algorithm (`lib/suggestions.ts`):
+   - Prioritize never-completed tasks
+   - Sort by least recently completed
+   - Respect user assignments
+   - Filter by slot type compatibility
+2. Write comprehensive tests for suggestion algorithm
+3. Create Schedules API routes:
+   - `GET /api/schedules` - List schedules
+   - `POST /api/schedules` - Create schedule
+   - `POST /api/schedules/suggest` - Get suggested task for slot
+   - `DELETE /api/schedules/[id]` - Delete schedule
+4. Write API route tests for schedules
+5. Test suggestion algorithm with various scenarios
+
+### Phase 5: Dashboard & Main UI (v0.5.0)
+1. Build personal dashboard (`app/(dashboard)/page.tsx`):
    - "Today's Tasks" section
    - "Your Assigned Chores" section
-   - Quick stats (completion streaks, etc.)
-2. Create chore pool management page:
-   - Separate views for each frequency
-   - Add/edit/delete chores
-   - Assign to users
-3. Implement completion flow with animations
+   - Quick stats widget (completion streaks, etc.)
+2. Create chore pool management page (`app/(dashboard)/chores/page.tsx`):
+   - Separate tabs/views for each frequency
+   - Add/edit/delete chores with ChoreForm component
+   - Assign chores to users
+3. Build supporting components:
+   - ChoreCard - individual chore display
+   - ChoreForm - create/edit chore modal
+   - FrequencyBadge - visual frequency indicator
+   - DashboardStats - stats widget
+4. Implement basic completion flow (checkbox → API call → update UI)
+5. Write component tests for all new components
 
-### Phase 5: Schedule System (v0.5.0)
-1. Build calendar/schedule view
-2. Implement slot creation:
+### Phase 6: Schedule System & Calendar (v0.6.0)
+1. Build schedule/calendar view (`app/(dashboard)/schedule/page.tsx`)
+2. Create ScheduleCalendar component:
+   - Display schedules in calendar format
+   - Show upcoming tasks
+3. Implement slot creation UI:
    - Weekly slots → pull from daily/monthly pools
    - Monthly slots → pull from yearly pool
-3. Create slot picker UI with suggestions
-4. Add drag-and-drop or selection interface
+4. Build SlotPicker component:
+   - Show suggested task from algorithm
+   - Allow manual override/selection
+   - Drag-and-drop or click-to-select interface
+5. Add completion flow for scheduled tasks
+6. Write component tests for schedule components
+7. Test full schedule workflow end-to-end
 
-### Phase 6: Polish & Refinement (v1.0.0)
+### Phase 7: Polish & Production Release (v1.0.0)
 1. Add animations with Framer Motion:
-   - Page transitions
-   - Completion celebrations
-   - Staggered reveals
-2. Mobile responsive refinements
-3. Loading states and error handling
+   - Page transitions (fade/slide)
+   - Task completion celebrations (confetti, scale animation)
+   - Staggered card reveals on page load
+2. Mobile responsive refinements:
+   - Test all pages on mobile viewport
+   - Adjust touch targets (min 44x44px)
+   - Optimize layouts for small screens
+3. Loading states and error handling:
+   - Skeleton loaders for data fetching
+   - Error boundaries for component failures
+   - Toast notifications for API errors
 4. Add completion history view
-5. Performance optimization
+5. Performance optimization:
+   - Image optimization
+   - Code splitting
+   - React Server Components optimization
+6. Final testing pass (all tests passing, >80% coverage)
+7. Deploy to Vercel production
 
 ## Key Features Implementation Details
 

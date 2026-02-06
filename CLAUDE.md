@@ -226,12 +226,13 @@ In addition to automated tests, verify:
 ## Implementation Status
 
 This project is in early development. Refer to PLAN.md for the phased implementation roadmap with semantic versioning:
-1. v0.1.0 - Project Setup & Foundation
-2. v0.2.0 - Authentication & User Management
-3. v0.3.0 - Core Data Layer & API
-4. v0.4.0 - Dashboard & Main UI
-5. v0.5.0 - Schedule System
-6. v1.0.0 - Polish & Refinement (production release)
+1. v0.1.0 - Foundation & Setup (Next.js, testing, UI components)
+2. v0.2.0 - Authentication & User Management (Neon Auth integration)
+3. v0.3.0 - Basic CRUD APIs (chores, completions)
+4. v0.4.0 - Suggestion Algorithm & Schedules
+5. v0.5.0 - Dashboard & Main UI
+6. v0.6.0 - Schedule System & Calendar
+7. v1.0.0 - Polish & Production Release
 
 ## Key Considerations
 
