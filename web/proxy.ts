@@ -1,16 +1,16 @@
 import { neonAuthMiddleware } from '@neondatabase/auth/next/server';
 
 /**
- * Next.js middleware for route protection
+ * Next.js Proxy (Route Protection)
  * Checks authentication with Neon Auth
  *
  * Note: User approval checking is done at the application level (dashboard layout)
- * because middleware runs on edge runtime which doesn't support Prisma database queries
+ * because proxy runs on edge runtime which doesn't support Prisma database queries
  *
  * All routes are protected by default except:
  * - The login URL (/sign-in)
  * - Auth API routes (/api/auth/*)
- * - Public pages (/, /pending-approval)
+ * - Public pages (/, /pending-approval, /sign-up)
  */
 export default neonAuthMiddleware({
   loginUrl: '/sign-in',

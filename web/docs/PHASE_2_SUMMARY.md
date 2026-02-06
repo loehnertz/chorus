@@ -167,11 +167,10 @@ NEXT_PUBLIC_APP_URL="http://localhost:3001"  # Development
 
 ### Known Limitations
 
-1. **Middleware Deprecation Warning**: Next.js 16 deprecates `middleware.ts` in favor of `proxy.ts`. Our code uses the older pattern because Neon Auth's middleware function (`neonAuthMiddleware`) currently expects this format. This will need to be updated when Neon Auth releases proxy.ts support.
-2. **No Email Verification**: Email verification not yet configured (can be enabled in Neon Auth dashboard)
-3. **No Password Reset**: Password reset flow not yet implemented (Neon Auth supports this)
-4. **No OAuth**: OAuth providers not yet configured (can be added in Neon Auth dashboard)
-5. **No Admin UI**: Approval is command-line only (admin UI can be added in Phase 5)
+1. **No Email Verification**: Email verification not yet configured (can be enabled in Neon Auth dashboard)
+2. **No Password Reset**: Password reset flow not yet implemented (Neon Auth supports this)
+3. **No OAuth**: OAuth providers not yet configured (can be added in Neon Auth dashboard)
+4. **No Admin UI**: Approval is command-line only (admin UI can be added in Phase 5)
 
 ### Next Steps (Phase 3)
 
