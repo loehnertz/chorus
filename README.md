@@ -1,20 +1,30 @@
-# chorus
+# Chorus
 
-A shared chore tracking web application with an innovative slot-based scheduling system. Built for couples and households who want to manage recurring tasks across different time frequencies.
+A chore tracking app for households with a cascading schedule system. Built for couples and small households who want chores to just get done without micromanaging a calendar.
 
 ## Overview
 
-chorus helps you organize household chores using frequency pools (daily, weekly, monthly, yearly) and a unique slot-based system. Instead of rigid schedules, you can pull tasks from any frequency pool into your schedule—like tackling a yearly deep-cleaning task during a monthly slot.
+Chorus organizes household chores by frequency — daily, weekly, monthly, yearly — and uses a **cascading schedule** to make sure everything gets done. The idea is simple: each frequency level automatically pulls in one chore from the next higher level.
+
+- Each **day**: your daily chores + 1 weekly chore
+- Each **week**: your weekly chores + 1 monthly chore
+- Each **month**: your monthly chores + 1 yearly chore
+
+This means 12 yearly chores naturally spread across the year (one per month), 4 monthly chores spread across the weeks, and so on. The system suggests which chore to pull in — prioritizing ones you haven't done in the longest time — but you can always override or pull in extra.
+
+Everything ultimately lands on your **daily schedule**: you open the app, see what's on your plate today, and check things off.
 
 **Deployment Model**: Each deployment represents a single household. All users share the same chore pool and can see each other's tasks.
 
 ## Key Features
 
-- **Slot-based scheduling** - Flexible task scheduling across frequency pools
+- **Cascading schedule** - Higher-frequency chores automatically trickle down into your daily plan
+- **Smart suggestions** - Algorithm suggests the most overdue chore to cascade next
+- **Day-level scheduling** - One daily view as your single source of truth
 - **Multi-user support** - Track who's assigned to what and who completed tasks
-- **Smart suggestions** - Algorithm suggests tasks based on completion history
 - **Personal dashboards** - Each user sees their assigned tasks and quick stats
 - **Completion tracking** - Full history of who did what and when
+- **Pace warnings** - Get notified if you're falling behind (e.g., too many yearly chores left for remaining months)
 - **Mobile-friendly** - Responsive design optimized for touch interactions
 
 ## Tech Stack
@@ -106,14 +116,12 @@ npx prisma generate      # Regenerate Prisma Client
 
 ## Project Status
 
-🚧 **In Active Development** - Phase 1 complete, ready for Phase 2
-
-See [PLAN.md](./PLAN.md) for the complete implementation roadmap and architecture details.
+In active development. See [PLAN.md](./PLAN.md) for the full implementation roadmap.
 
 **Phases**:
-1. v0.1.0 - Foundation & Setup ✅
-2. v0.2.0 - Authentication & User Management ⏳
-3. v0.3.0 - Basic CRUD APIs
+1. v0.1.0 - Foundation & Setup
+2. v0.2.0 - Authentication & User Management
+3. v0.3.0 - Basic CRUD APIs (current)
 4. v0.4.0 - Suggestion Algorithm & Schedules
 5. v0.5.0 - Dashboard & Main UI
 6. v0.6.0 - Schedule System & Calendar

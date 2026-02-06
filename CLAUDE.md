@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Chorus** is a slot-based chore tracking web application for couples and households. The core innovation is a slot-based scheduling system where users can pull tasks from frequency pools (daily, weekly, monthly, yearly) into their schedule.
+**Chorus** is a chore tracking web application for couples and households. Chores are categorized by frequency (DAILY, WEEKLY, MONTHLY, YEARLY), and a **cascading schedule system** ensures everything gets done by pulling higher-level chores down into lower-level time periods. All scheduling ultimately resolves to specific dates — the user's daily view is the single source of truth.
 
 **Deployment Model**: Each deployment represents a single household - there is no multi-household support. All users in a deployment share the same chore pool. The application is designed to be deployed on Vercel.
 
@@ -141,14 +141,20 @@ This documentation helps:
 
 ## Architecture
 
-### Slot-Based Scheduling System
+### Cascading Schedule System
 
-The core architectural concept is that chores belong to frequency pools (DAILY, WEEKLY, MONTHLY, YEARLY), and users create "slots" that pull tasks from these pools:
+Chores belong to frequency tiers (DAILY, WEEKLY, MONTHLY, YEARLY). The cascade rule: each frequency level includes its own chores **plus one chore pulled down from the next higher level**:
 
-- **Weekly Slot**: Can pull from DAILY or MONTHLY chore pools
-- **Monthly Slot**: Can pull from YEARLY chore pool
-- System suggests tasks based on least recently completed
-- Users can manually override suggestions
+- **Daily**: daily chores + 1 weekly chore
+- **Weekly**: weekly chores + 1 monthly chore
+- **Monthly**: monthly chores + 1 yearly chore
+- **Yearly**: yearly chores only (no higher tier)
+
+**Key rules:**
+- The cascade is a **suggestion, not a hard constraint** — users can pull more than one (e.g., 2 yearly chores in one month)
+- The system warns if chores exceed available slots (e.g., >12 yearly chores for 12 months) but does not block
+- All chores ultimately get scheduled onto **specific dates** — the daily view is the single source of truth
+- Users periodically plan upcoming days; the system warns if they fall behind the cascade pace
 
 ### Key Models & Relationships
 
@@ -166,21 +172,21 @@ Chore (deployment-wide, shared by all users)
   ├─ schedules (Schedule[])
   └─ completions (ChoreCompletion[])
 
-Schedule (slot instance)
+Schedule (chore scheduled for a specific date)
   ├─ chore (Chore)
-  ├─ scheduledFor (DateTime)
-  ├─ slotType (Frequency)
-  ├─ suggested (boolean)
+  ├─ scheduledFor (DateTime - always a specific date)
+  ├─ slotType (Frequency - the level this schedule belongs to)
+  ├─ suggested (boolean - was this auto-suggested or manually picked)
   └─ completions (ChoreCompletion[])
 ```
 
-### Task Suggestion Algorithm
+### Suggestion Algorithm
 
-Located in `lib/suggestions.ts`, the algorithm prioritizes:
-1. Never-completed tasks (highest priority)
-2. Least recently completed tasks
+Located in `lib/suggestions.ts`, the algorithm suggests which chore to cascade down next:
+1. Never-completed chores (highest priority)
+2. Least recently completed chores
 3. User assignment matching
-4. Slot type compatibility (respects frequency hierarchy)
+4. Cascade is one level only (daily←weekly, weekly←monthly, monthly←yearly)
 
 ### Directory Structure
 
