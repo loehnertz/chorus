@@ -49,7 +49,12 @@ export function CompletionCheckbox({
         className
       )}
       animate={checked ? { scale: [1, 1.2, 1] } : { scale: 1 }}
-      transition={{ duration: 0.3, type: 'spring', stiffness: 400, damping: 22 }}
+      // Motion spring/inertia only support two keyframes; use a tween keyframe bounce.
+      transition={
+        checked
+          ? { duration: 0.25, ease: 'easeOut' }
+          : { duration: 0.15, ease: 'easeOut' }
+      }
     >
       <motion.span
         initial={false}

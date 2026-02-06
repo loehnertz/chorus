@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import { startOfTodayUtc } from '@/lib/date'
 import { ScheduleView } from '@/components/schedule-view'
 
+type SearchParams = Record<string, string | string[] | undefined>
+
 function parseMonthParam(raw: string | undefined): { year: number; monthIndex: number } | null {
   if (!raw) return null
   const m = raw.match(/^(\d{4})-(\d{2})$/)
@@ -23,17 +25,21 @@ function parseDayParam(raw: string | undefined): string | null {
 export default async function SchedulePage({
   searchParams,
 }: {
-  searchParams?: { month?: string; day?: string }
+  searchParams?: SearchParams | Promise<SearchParams>
 }) {
   const session = await requireApprovedUser()
   const userId = session.user.id
 
+  const sp = (await Promise.resolve(searchParams)) ?? {}
+  const monthRaw = Array.isArray(sp.month) ? sp.month[0] : sp.month
+  const dayRaw = Array.isArray(sp.day) ? sp.day[0] : sp.day
+
   const now = new Date()
-  const parsedMonth = parseMonthParam(searchParams?.month)
+  const parsedMonth = parseMonthParam(monthRaw)
   const year = parsedMonth?.year ?? now.getUTCFullYear()
   const monthIndex = parsedMonth?.monthIndex ?? now.getUTCMonth()
 
-  const initialSelectedDayKey = parseDayParam(searchParams?.day)
+  const initialSelectedDayKey = parseDayParam(dayRaw)
 
   const monthStart = new Date(Date.UTC(year, monthIndex, 1))
   const monthEnd = new Date(Date.UTC(year, monthIndex + 1, 1))

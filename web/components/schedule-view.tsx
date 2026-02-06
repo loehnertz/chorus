@@ -155,6 +155,9 @@ export function ScheduleView({
     const month = toMonthParam(targetYear, targetMonthIndex)
     const url = `/schedule?month=${encodeURIComponent(month)}`
     router.push(url)
+    // Some Next.js versions can treat searchParam-only pushes as shallow.
+    // Refresh ensures the server component re-runs with the new query.
+    setTimeout(() => router.refresh(), 0)
   }
 
   const prevMonth = () => {
