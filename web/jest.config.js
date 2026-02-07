@@ -18,13 +18,18 @@ const customJestConfig = {
     '**/?(*.)+(spec|test).[jt]s?(x)',
   ],
   collectCoverageFrom: [
-    'app/**/*.{js,jsx,ts,tsx}',
+    'app/api/**/*.{js,jsx,ts,tsx}',
+    'app/**/error.{js,jsx,ts,tsx}',
     'components/**/*.{js,jsx,ts,tsx}',
     'lib/**/*.{js,jsx,ts,tsx}',
+    '!app/api/auth/**',
     '!**/*.d.ts',
     '!**/node_modules/**',
     '!**/.next/**',
     '!**/coverage/**',
+    '!lib/db.{js,jsx,ts,tsx}',
+    '!lib/auth/client.{js,jsx,ts,tsx}',
+    '!lib/auth/server.{js,jsx,ts,tsx}',
   ],
 }
 

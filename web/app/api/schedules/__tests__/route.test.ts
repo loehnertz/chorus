@@ -19,7 +19,9 @@ jest.mock('@/lib/db', () => ({
   db: {
     schedule: {
       findMany: jest.fn(),
+      findFirst: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
     },
     chore: {
       findUnique: jest.fn(),
@@ -140,6 +142,7 @@ describe('POST /api/schedules', () => {
   it('should create schedule successfully', async () => {
     const session = createMockSession();
     (requireApprovedUserApi as jest.Mock).mockResolvedValue(session);
+    (db.schedule.findFirst as jest.Mock).mockResolvedValue(null);
     (db.chore.findUnique as jest.Mock).mockResolvedValue({ id: 'c1' });
 
     const created = { id: 's1', choreId: 'c1', slotType: 'DAILY', suggested: true };
@@ -152,5 +155,30 @@ describe('POST /api/schedules', () => {
     const response = await POST(request as never);
     expect(response.status).toBe(201);
     await expect(response.json()).resolves.toEqual(created);
+  });
+
+  it('should be idempotent when already scheduled', async () => {
+    const session = createMockSession();
+    (requireApprovedUserApi as jest.Mock).mockResolvedValue(session);
+
+    const existing = {
+      id: 's1',
+      choreId: 'c1',
+      scheduledFor: '2026-02-01T00:00:00.000Z',
+      slotType: 'DAILY',
+      suggested: true,
+      chore: { id: 'c1', title: 'Dishes', description: null, frequency: 'DAILY' },
+    };
+    (db.schedule.findFirst as jest.Mock).mockResolvedValue(existing);
+
+    const request = createMockRequest('/api/schedules', {
+      method: 'POST',
+      body: { choreId: 'c1', scheduledFor: '2026-02-01T00:00:00Z', slotType: 'DAILY' },
+    });
+    const response = await POST(request as never);
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual(existing);
+    expect(db.schedule.create).not.toHaveBeenCalled();
   });
 });

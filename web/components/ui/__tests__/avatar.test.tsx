@@ -7,6 +7,13 @@ describe('Avatar', () => {
     expect(screen.getByText('A')).toBeInTheDocument()
   })
 
+  it('renders at xs size', () => {
+    render(<Avatar name="Bob" userId="user-2" size="xs" />)
+    const el = screen.getByLabelText('Bob')
+    expect(el.className).toContain('h-5')
+    expect(el.className).toContain('w-5')
+  })
+
   it('uses a deterministic color based on userId', () => {
     const { rerender } = render(<Avatar name="Alice" userId="same" />)
     const first = screen.getByLabelText('Alice')

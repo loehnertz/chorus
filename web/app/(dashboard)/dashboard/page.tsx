@@ -2,8 +2,10 @@ import { unstable_noStore as noStore } from 'next/cache'
 import { requireApprovedUser } from '@/lib/auth/require-approval'
 import { db } from '@/lib/db'
 import { DashboardView } from '@/components/dashboard-view'
+import { PageFadeIn } from '@/components/page-fade-in'
 import { startOfTomorrowUtc, startOfTodayUtc, startOfWeekUtc } from '@/lib/date'
 import { computeStreakDaysUtc } from '@/lib/streak'
+import { ensureDailySchedules } from '@/lib/auto-schedule'
 
 /**
  * Dashboard Page
@@ -15,6 +17,8 @@ export default async function DashboardPage() {
   const userId = session.user.id
 
   const now = new Date()
+  await ensureDailySchedules(now)
+
   const startToday = startOfTodayUtc(now)
   const startTomorrow = startOfTomorrowUtc(now)
   const startWeek = startOfWeekUtc(now)
@@ -84,16 +88,18 @@ export default async function DashboardPage() {
   }))
 
   return (
-    <DashboardView
-      stats={{
-        choresCount,
-        completedTotal,
-        completedThisWeek,
-        streakDays,
-      }}
-      todaysTasks={todaysTasks}
-      recentActivity={recentActivity}
-    />
+    <PageFadeIn>
+      <DashboardView
+        stats={{
+          choresCount,
+          completedTotal,
+          completedThisWeek,
+          streakDays,
+        }}
+        todaysTasks={todaysTasks}
+        recentActivity={recentActivity}
+      />
+    </PageFadeIn>
   )
 }
 

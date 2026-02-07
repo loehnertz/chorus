@@ -3,6 +3,7 @@ import { requireApprovedUser } from '@/lib/auth/require-approval'
 import { db } from '@/lib/db'
 import { startOfTodayUtc } from '@/lib/date'
 import { ScheduleView } from '@/components/schedule-view'
+import { ensureDailySchedules } from '@/lib/auto-schedule'
 
 type SearchParams = Record<string, string | string[] | undefined>
 
@@ -37,6 +38,8 @@ export default async function SchedulePage({
   const dayRaw = Array.isArray(sp.day) ? sp.day[0] : sp.day
 
   const now = new Date()
+  await ensureDailySchedules(now)
+
   const parsedMonth = parseMonthParam(monthRaw)
   const year = parsedMonth?.year ?? now.getUTCFullYear()
   const monthIndex = parsedMonth?.monthIndex ?? now.getUTCMonth()
@@ -44,13 +47,23 @@ export default async function SchedulePage({
   const initialSelectedDayKey = parseDayParam(dayRaw)
 
   const monthStart = new Date(Date.UTC(year, monthIndex, 1))
-  const monthEnd = new Date(Date.UTC(year, monthIndex + 1, 1))
+
+  // Calendar grid spans 6 full weeks starting Monday.
+  const monthStartDow = monthStart.getUTCDay() // 0 (Sun) .. 6 (Sat)
+  const daysSinceMonday = (monthStartDow + 6) % 7
+  const gridStart = new Date(monthStart)
+  gridStart.setUTCDate(gridStart.getUTCDate() - daysSinceMonday)
+  const gridEnd = new Date(gridStart)
+  gridEnd.setUTCDate(gridEnd.getUTCDate() + 42)
+
+  const yearStart = new Date(Date.UTC(year, 0, 1))
+  const yearEnd = new Date(Date.UTC(year + 1, 0, 1))
 
   const upcomingStart = startOfTodayUtc(now)
   const upcomingEnd = new Date(upcomingStart)
   upcomingEnd.setUTCDate(upcomingEnd.getUTCDate() + 14)
 
-  const [chores, monthSchedulesRaw, upcomingRaw] = await Promise.all([
+  const [chores, monthSchedulesRaw, upcomingRaw, yearlyScheduledRaw, users] = await Promise.all([
     db.chore.findMany({
       select: {
         id: true,
@@ -62,7 +75,7 @@ export default async function SchedulePage({
       orderBy: { title: 'asc' },
     }),
     db.schedule.findMany({
-      where: { scheduledFor: { gte: monthStart, lt: monthEnd } },
+      where: { scheduledFor: { gte: gridStart, lt: gridEnd } },
       include: {
         chore: {
           select: {
@@ -73,7 +86,7 @@ export default async function SchedulePage({
             assignments: { select: { userId: true } },
           },
         },
-        completions: { where: { userId }, select: { id: true } },
+        completions: { select: { id: true, userId: true } },
       },
       orderBy: { scheduledFor: 'asc' },
     }),
@@ -89,9 +102,21 @@ export default async function SchedulePage({
             assignments: { select: { userId: true } },
           },
         },
-        completions: { where: { userId }, select: { id: true } },
+        completions: { select: { id: true, userId: true } },
       },
       orderBy: { scheduledFor: 'asc' },
+    }),
+    db.schedule.findMany({
+      where: {
+        scheduledFor: { gte: yearStart, lt: yearEnd },
+        chore: { frequency: 'YEARLY' },
+      },
+      distinct: ['choreId'],
+      select: { choreId: true },
+    }),
+    db.user.findMany({
+      where: { approved: true },
+      select: { id: true, name: true },
     }),
   ])
 
@@ -109,6 +134,7 @@ export default async function SchedulePage({
     slotType: s.slotType,
     suggested: s.suggested,
     completed: s.completions.length > 0,
+    completedByUserId: s.completions[0]?.userId ?? null,
     chore: {
       id: s.chore.id,
       title: s.chore.title,
@@ -127,6 +153,8 @@ export default async function SchedulePage({
       chores={mappedChores}
       monthSchedules={monthSchedulesRaw.map(mapSchedule)}
       upcomingSchedules={upcomingRaw.map(mapSchedule)}
+      yearlyScheduledChoreIds={yearlyScheduledRaw.map((r) => r.choreId)}
+      users={users}
     />
   )
 }

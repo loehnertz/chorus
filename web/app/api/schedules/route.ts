@@ -70,6 +70,51 @@ export async function POST(request: Request) {
 
     const { choreId, scheduledFor, slotType, suggested } = parsed.data;
 
+    // Idempotency: if this chore is already scheduled for this exact datetime,
+    // return the existing record (and optionally update metadata).
+    const existing = await db.schedule.findFirst({
+      where: { choreId, scheduledFor },
+      include: {
+        chore: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            frequency: true,
+          },
+        },
+      },
+    });
+
+    if (existing) {
+      const nextSuggested = existing.suggested && suggested;
+      const needsUpdate = existing.slotType !== slotType || existing.suggested !== nextSuggested;
+
+      if (!needsUpdate) {
+        return Response.json(existing, { status: 200 });
+      }
+
+      const updated = await db.schedule.update({
+        where: { id: existing.id },
+        data: {
+          slotType,
+          suggested: nextSuggested,
+        },
+        include: {
+          chore: {
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              frequency: true,
+            },
+          },
+        },
+      });
+
+      return Response.json(updated, { status: 200 });
+    }
+
     const chore = await db.chore.findUnique({ where: { id: choreId } });
     if (!chore) {
       return Response.json({ error: 'Chore not found' }, { status: 404 });

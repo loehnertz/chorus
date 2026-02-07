@@ -3,6 +3,20 @@ import '@testing-library/jest-dom'
 
 import { TextDecoder, TextEncoder } from 'util'
 
+// Keep test output focused: several API route tests intentionally exercise
+// error paths (500s) and log console.error. Only suppress the known/expected
+// messages when the error object matches our mocked DB errors.
+const originalConsoleError = console.error
+console.error = (...args) => {
+  const [msg, err] = args
+  if (typeof msg === 'string' && msg.startsWith('Failed to') && err instanceof Error) {
+    if (err.message === 'DB error' || err.message === 'Database connection failed') {
+      return
+    }
+  }
+  originalConsoleError(...args)
+}
+
 if (!globalThis.TextEncoder) {
   globalThis.TextEncoder = TextEncoder
 }
