@@ -62,8 +62,9 @@ export default async function SchedulePage({
   const yearStart = new Date(Date.UTC(year, 0, 1))
   const yearEnd = new Date(Date.UTC(year + 1, 0, 1))
 
-  const halfYearStart = startOfHalfYearUtc(now)
-  const halfYearEnd = endOfHalfYearUtc(now)
+  // Use the viewed month to anchor long-range (half-year) scheduling state.
+  const halfYearStart = startOfHalfYearUtc(monthStart)
+  const halfYearEnd = endOfHalfYearUtc(monthStart)
 
   const upcomingStart = startOfTodayUtc(now)
   const upcomingEnd = new Date(upcomingStart)
@@ -131,6 +132,7 @@ export default async function SchedulePage({
     }),
     db.schedule.findMany({
       where: {
+        hidden: false,
         scheduledFor: { gte: halfYearStart, lt: halfYearEnd },
         chore: { frequency: 'SEMIANNUAL' },
       },

@@ -20,7 +20,11 @@ describe('withApproval', () => {
       Response.json({ error: 'Unauthorized' }, { status: 401 }),
     );
 
-    const handler = jest.fn(async () => Response.json({ ok: true }));
+    const handler = jest.fn(async (_session: unknown, _request: Request) => {
+      void _session
+      void _request
+      return Response.json({ ok: true })
+    })
     const wrapped = withApproval(handler);
 
     const res = await wrapped(new Request('http://localhost/api/chores'));

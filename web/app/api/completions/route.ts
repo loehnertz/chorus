@@ -1,6 +1,11 @@
 import { db } from '@/lib/db';
 import { withApproval } from '@/lib/auth/with-approval';
-import { createCompletionSchema, formatValidationError } from '@/lib/validations';
+import {
+  createCompletionSchema,
+  formatValidationError,
+  listCompletionsQuerySchema,
+} from '@/lib/validations';
+import { startOfTodayUtc, startOfTomorrowUtc } from '@/lib/date';
 
 export const POST = withApproval(async (session, request: Request) => {
   try {
@@ -71,23 +76,32 @@ export const POST = withApproval(async (session, request: Request) => {
 export const GET = withApproval(async (_session, request: Request) => {
   try {
     const { searchParams } = new URL(request.url);
-    const choreId = searchParams.get('choreId');
-    const userId = searchParams.get('userId');
-    const from = searchParams.get('from');
-    const to = searchParams.get('to');
-    const limitParam = searchParams.get('limit');
-    const offsetParam = searchParams.get('offset');
+    const rawQuery = {
+      choreId: searchParams.get('choreId') ?? undefined,
+      userId: searchParams.get('userId') ?? undefined,
+      from: searchParams.get('from') ?? undefined,
+      to: searchParams.get('to') ?? undefined,
+      limit: searchParams.get('limit') ?? undefined,
+      offset: searchParams.get('offset') ?? undefined,
+    };
 
-    const limit = Math.min(Math.max(parseInt(limitParam || '50', 10) || 50, 1), 100);
-    const offset = Math.max(parseInt(offsetParam || '0', 10) || 0, 0);
+    const parsed = listCompletionsQuerySchema.safeParse(rawQuery);
+    if (!parsed.success) {
+      return Response.json(formatValidationError(parsed.error), { status: 400 });
+    }
+
+    const { choreId, userId, from, to, limit, offset } = parsed.data;
+
+    const toIsDateOnly = typeof rawQuery.to === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawQuery.to);
+    const fromIsDateOnly = typeof rawQuery.from === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawQuery.from);
 
     const where: Record<string, unknown> = {};
     if (choreId) where.choreId = choreId;
     if (userId) where.userId = userId;
     if (from || to) {
       where.completedAt = {
-        ...(from && { gte: new Date(from) }),
-        ...(to && { lte: new Date(to) }),
+        ...(from && { gte: fromIsDateOnly ? startOfTodayUtc(from) : from }),
+        ...(to && (toIsDateOnly ? { lt: startOfTomorrowUtc(to) } : { lte: to })),
       };
     }
 

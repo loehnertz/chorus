@@ -5,6 +5,7 @@ import {
   formatValidationError,
   listSchedulesQuerySchema,
 } from '@/lib/validations';
+import { startOfTodayUtc, startOfTomorrowUtc } from '@/lib/date';
 
 export const GET = withApproval(async (_session, request: Request) => {
   try {
@@ -22,6 +23,9 @@ export const GET = withApproval(async (_session, request: Request) => {
 
     const { from, to, frequency } = parsed.data;
 
+    const fromIsDateOnly = typeof rawQuery.from === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawQuery.from);
+    const toIsDateOnly = typeof rawQuery.to === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawQuery.to);
+
     const schedules = await db.schedule.findMany({
       where: {
         hidden: false,
@@ -29,8 +33,8 @@ export const GET = withApproval(async (_session, request: Request) => {
         ...(from || to
           ? {
               scheduledFor: {
-                ...(from && { gte: from }),
-                ...(to && { lte: to }),
+                ...(from && { gte: fromIsDateOnly ? startOfTodayUtc(from) : from }),
+                ...(to && (toIsDateOnly ? { lt: startOfTomorrowUtc(to) } : { lte: to })),
               },
             }
           : {}),

@@ -1,6 +1,8 @@
 import { Frequency } from '@prisma/client';
 
 import { db } from '@/lib/db';
+import { getCascadeSourceFrequency as getCascadeSourceFrequencyClient } from '@/lib/cascade';
+import type { Frequency as AppFrequency } from '@/types/frequency';
 import {
   startOfTodayUtc,
   startOfWeekUtc,
@@ -94,14 +96,9 @@ function getRemainingSlotsForSourceFrequency(sourceFrequency: Frequency, now: Da
 }
 
 export function getCascadeSourceFrequency(currentFrequency: Frequency | `${Frequency}`): Frequency | null {
-  const freq = currentFrequency as Frequency;
-  if (freq === Frequency.DAILY) return Frequency.WEEKLY;
-  if (freq === Frequency.WEEKLY) return Frequency.BIWEEKLY;
-  if (freq === Frequency.BIWEEKLY) return Frequency.MONTHLY;
-  if (freq === Frequency.MONTHLY) return Frequency.BIMONTHLY;
-  if (freq === Frequency.BIMONTHLY) return Frequency.SEMIANNUAL;
-  if (freq === Frequency.SEMIANNUAL) return Frequency.YEARLY;
-  return null;
+  // Keep server-side logic in sync with the client cascade mapping.
+  const source = getCascadeSourceFrequencyClient(currentFrequency as unknown as AppFrequency);
+  return source ? (source as unknown as Frequency) : null;
 }
 
 export async function suggestCascadedChore(params: {

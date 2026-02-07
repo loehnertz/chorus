@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { FREQUENCIES } from '@/types/frequency';
-import { parseUtcDateInput } from '@/lib/date';
+import { parseUtcDateInput, startOfTodayUtc } from '@/lib/date';
 
 const VALID_FREQUENCIES = FREQUENCIES;
 
@@ -48,7 +48,7 @@ export const createCompletionSchema = z.object({
     .transform((s) => s.trim() || null)
     .optional()
     .default(''),
-  completedAt: z.coerce.date().optional(),
+  completedAt: utcDateField('completedAt').optional(),
 });
 
 export const assignChoreSchema = z.object({
@@ -66,7 +66,7 @@ function utcDateField(fieldName: string) {
 
 export const createScheduleSchema = z.object({
   choreId: z.string().transform((s) => s.trim()).pipe(z.string().min(1, 'choreId is required')),
-  scheduledFor: utcDateField('scheduledFor'),
+  scheduledFor: utcDateField('scheduledFor').transform((d) => startOfTodayUtc(d)),
   slotType: z.enum(VALID_FREQUENCIES, {
     message: `Must be one of: ${VALID_FREQUENCIES.join(', ')}`,
   }),
@@ -97,8 +97,31 @@ export const scheduleSuggestSchema = z
   .transform((data) => ({
     currentFrequency: (data.currentFrequency ?? data.slotType)!,
     userId: data.userId,
-    forDate: data.forDate ?? data.scheduledFor,
+    forDate: data.forDate ?? data.scheduledFor
+      ? startOfTodayUtc((data.forDate ?? data.scheduledFor)!)
+      : undefined,
   }));
+
+export const listCompletionsQuerySchema = z
+  .object({
+    choreId: z.string().transform((s) => s.trim()).pipe(z.string().min(1)).optional(),
+    userId: z.string().transform((s) => s.trim()).pipe(z.string().min(1)).optional(),
+    from: utcDateField('from').optional(),
+    to: utcDateField('to').optional(),
+    // Match existing API behavior: clamp limit to 100 (don't hard-fail on >100).
+    limit: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional()
+      .default(50)
+      .transform((n) => Math.min(n, 100)),
+    offset: z.coerce.number().int().min(0).optional().default(0),
+  })
+  .refine((data) => !(data.from && data.to) || data.from <= data.to, {
+    message: 'from must be before or equal to to',
+    path: ['from'],
+  });
 
 export const listSchedulesQuerySchema = z
   .object({

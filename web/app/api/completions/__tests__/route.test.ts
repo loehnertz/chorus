@@ -353,8 +353,8 @@ describe('GET /api/completions', () => {
       expect.objectContaining({
         where: expect.objectContaining({
           completedAt: {
-            gte: new Date('2024-01-01'),
-            lte: new Date('2024-12-31'),
+            gte: new Date('2024-01-01T00:00:00.000Z'),
+            lt: new Date('2025-01-01T00:00:00.000Z'),
           },
         }),
       }),
