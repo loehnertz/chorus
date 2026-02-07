@@ -19,7 +19,6 @@
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
-- [Project Status](#project-status)
 - [Design Philosophy](#design-philosophy)
 - [Contributing](#contributing)
 - [License](#license)
@@ -135,19 +134,6 @@ npx prisma migrate dev   # Create and apply migrations
 npx prisma studio        # Open Prisma Studio GUI
 npx prisma generate      # Regenerate Prisma Client
 ```
-
-## Project Status
-
-In active development. See [PLAN.md](./PLAN.md) for the full implementation roadmap.
-
-**Phases**:
-1. v0.1.0 - Foundation & Setup
-2. v0.2.0 - Authentication & User Management
-3. v0.3.0 - Basic CRUD APIs (current)
-4. v0.4.0 - Suggestion Algorithm & Schedules
-5. v0.5.0 - Dashboard & Main UI
-6. v0.6.0 - Schedule System & Calendar
-7. v1.0.0 - Polish & Production Release
 
 ## Design Philosophy
 
