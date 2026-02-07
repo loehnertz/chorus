@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LogOut, Music2 } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { NAV_ITEMS } from '@/lib/nav'
 import { Avatar } from '@/components/ui/avatar'
@@ -37,7 +37,15 @@ export function Sidebar({ user, className }: SidebarProps) {
           prefetch={false}
           className="flex items-center gap-2 rounded-[var(--radius-md)] px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-terracotta)] focus-visible:ring-offset-2"
         >
-          <Music2 className="h-5 w-5 text-[var(--color-terracotta)]" aria-hidden="true" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/icons/icon-192.png"
+            alt=""
+            width={20}
+            height={20}
+            className="h-5 w-5"
+            aria-hidden="true"
+          />
           <span className="text-xl font-bold font-[var(--font-display)] text-[var(--color-terracotta)]">
             Chorus
           </span>
