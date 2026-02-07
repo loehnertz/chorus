@@ -447,7 +447,7 @@ export function ScheduleView({
     'px-3 py-1.5 rounded-full text-sm font-[var(--font-display)] font-medium cursor-pointer transition-colors'
 
   return (
-    <PageFadeIn className={cn('space-y-7 md:space-y-8', className)}>
+    <PageFadeIn className={cn('space-y-7 md:space-y-8 overflow-x-hidden', className)}>
       <div>
         <h1 className="text-2xl md:text-3xl font-[var(--font-display)] font-bold text-[var(--foreground)]">
           Schedule
@@ -457,11 +457,11 @@ export function ScheduleView({
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-        <div className="space-y-6">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+        <div className="min-w-0 space-y-6">
           <Card>
             <CardHeader className="flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-xl md:text-2xl">{monthTitle}</CardTitle>
+              <CardTitle className="min-w-0 text-xl md:text-2xl">{monthTitle}</CardTitle>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -492,7 +492,7 @@ export function ScheduleView({
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-7 gap-1 sm:gap-2 text-xs font-[var(--font-display)] text-[var(--foreground)]/50">
+              <div className="grid grid-cols-7 gap-0.5 sm:gap-2 text-xs font-[var(--font-display)] text-[var(--foreground)]/50">
                 {(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const).map((d, i) => {
                   const short = ['M', 'T', 'W', 'T', 'F', 'S', 'S'][i]
                   return (
@@ -503,7 +503,7 @@ export function ScheduleView({
                   )
                 })}
               </div>
-              <div className="mt-3 grid grid-cols-7 gap-1 sm:gap-2">
+              <div className="mt-3 grid grid-cols-7 gap-0.5 sm:gap-2">
                 {grid.map((cell) => {
                   const selected = cell.dayKey === selectedDayKey
                   const count = countsByDay[cell.dayKey] ?? 0
@@ -547,7 +547,7 @@ export function ScheduleView({
                       aria-current={cell.dayKey === todayKey ? 'date' : undefined}
                       tabIndex={cell.inMonth ? (selected ? 0 : -1) : -1}
                       className={cn(
-                        'relative flex h-12 flex-col items-start justify-between rounded-[var(--radius-md)] border px-2 py-1.5 text-left',
+                        'relative flex h-11 sm:h-12 min-w-0 flex-col items-start justify-between rounded-[var(--radius-md)] border px-1 sm:px-2 py-1 sm:py-1.5 text-left',
                         cell.inMonth
                           ? 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-2)] cursor-pointer'
                           : 'border-transparent bg-transparent opacity-40',
@@ -555,13 +555,13 @@ export function ScheduleView({
                         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-terracotta)] focus-visible:ring-offset-2'
                       )}
                     >
-                      <span className="text-sm font-[var(--font-display)] text-[var(--foreground)]">
+                      <span className="text-xs sm:text-sm font-[var(--font-display)] text-[var(--foreground)]">
                         {cell.date.getUTCDate()}
                       </span>
                       {count ? (
-                        <span className="text-[10px] text-[var(--foreground)]/60">{count}</span>
+                        <span className="text-[9px] sm:text-[10px] text-[var(--foreground)]/60">{count}</span>
                       ) : (
-                        <span className="text-[10px] text-[var(--foreground)]/40">&nbsp;</span>
+                        <span className="text-[9px] sm:text-[10px] text-[var(--foreground)]/40">&nbsp;</span>
                       )}
                     </button>
                   )
@@ -617,7 +617,7 @@ export function ScheduleView({
           </Card>
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-xl md:text-2xl">{formatDayTitleUtc(selectedDayKey)}</CardTitle>
