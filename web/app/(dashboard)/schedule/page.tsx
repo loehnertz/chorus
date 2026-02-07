@@ -63,7 +63,7 @@ export default async function SchedulePage({
   const upcomingEnd = new Date(upcomingStart)
   upcomingEnd.setUTCDate(upcomingEnd.getUTCDate() + 14)
 
-  const [chores, monthSchedulesRaw, upcomingRaw, yearlyScheduledRaw] = await Promise.all([
+  const [chores, monthSchedulesRaw, upcomingRaw, yearlyScheduledRaw, users] = await Promise.all([
     db.chore.findMany({
       select: {
         id: true,
@@ -86,7 +86,7 @@ export default async function SchedulePage({
             assignments: { select: { userId: true } },
           },
         },
-        completions: { where: { userId }, select: { id: true } },
+        completions: { select: { id: true, userId: true } },
       },
       orderBy: { scheduledFor: 'asc' },
     }),
@@ -102,7 +102,7 @@ export default async function SchedulePage({
             assignments: { select: { userId: true } },
           },
         },
-        completions: { where: { userId }, select: { id: true } },
+        completions: { select: { id: true, userId: true } },
       },
       orderBy: { scheduledFor: 'asc' },
     }),
@@ -113,6 +113,10 @@ export default async function SchedulePage({
       },
       distinct: ['choreId'],
       select: { choreId: true },
+    }),
+    db.user.findMany({
+      where: { approved: true },
+      select: { id: true, name: true },
     }),
   ])
 
@@ -130,6 +134,7 @@ export default async function SchedulePage({
     slotType: s.slotType,
     suggested: s.suggested,
     completed: s.completions.length > 0,
+    completedByUserId: s.completions[0]?.userId ?? null,
     chore: {
       id: s.chore.id,
       title: s.chore.title,
@@ -149,6 +154,7 @@ export default async function SchedulePage({
       monthSchedules={monthSchedulesRaw.map(mapSchedule)}
       upcomingSchedules={upcomingRaw.map(mapSchedule)}
       yearlyScheduledChoreIds={yearlyScheduledRaw.map((r) => r.choreId)}
+      users={users}
     />
   )
 }

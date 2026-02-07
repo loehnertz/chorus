@@ -25,6 +25,11 @@ jest.mock('@/components/slot-picker', () => ({
   SlotPicker: () => null,
 }))
 
+const defaultUsers = [
+  { id: 'u1', name: 'Alice' },
+  { id: 'u2', name: 'Bob' },
+]
+
 describe('ScheduleView', () => {
   beforeEach(() => {
     mockPush.mockReset()
@@ -72,6 +77,7 @@ describe('ScheduleView', () => {
           },
         ]}
         upcomingSchedules={[]}
+        users={defaultUsers}
       />
     )
 
@@ -107,6 +113,7 @@ describe('ScheduleView', () => {
         chores={[{ id: 'c1', title: 'Wash windows', frequency: 'DAILY', assigneeIds: [] }]}
         monthSchedules={[]}
         upcomingSchedules={[]}
+        users={defaultUsers}
       />
     )
 
@@ -147,6 +154,7 @@ describe('ScheduleView', () => {
           },
         ]}
         upcomingSchedules={[]}
+        users={defaultUsers}
       />
     )
 
@@ -163,5 +171,142 @@ describe('ScheduleView', () => {
     expect(mockRefresh).toHaveBeenCalled()
 
     await waitFor(() => expect(screen.queryAllByRole('checkbox')).toHaveLength(0))
+  })
+
+  it('shows tasks assigned to other users with de-emphasis', () => {
+    render(
+      <ScheduleView
+        userId="u1"
+        year={2026}
+        monthIndex={1}
+        initialSelectedDayKey="2026-02-06"
+        chores={[
+          { id: 'c1', title: 'My chore', frequency: 'DAILY', assigneeIds: ['u1'] },
+          { id: 'c2', title: 'Their chore', frequency: 'DAILY', assigneeIds: ['u2'] },
+        ]}
+        monthSchedules={[
+          {
+            id: 's1',
+            scheduledFor: '2026-02-06T00:00:00.000Z',
+            slotType: 'DAILY',
+            suggested: false,
+            completed: false,
+            chore: { id: 'c1', title: 'My chore', frequency: 'DAILY', assigneeIds: ['u1'] },
+          },
+          {
+            id: 's2',
+            scheduledFor: '2026-02-06T00:00:00.000Z',
+            slotType: 'DAILY',
+            suggested: false,
+            completed: false,
+            chore: { id: 'c2', title: 'Their chore', frequency: 'DAILY', assigneeIds: ['u2'] },
+          },
+        ]}
+        upcomingSchedules={[]}
+        users={defaultUsers}
+      />
+    )
+
+    // Both tasks should be visible in the day view (there are also entries in the Plan section)
+    const allMyChore = screen.getAllByText('My chore')
+    const allTheirChore = screen.getAllByText('Their chore')
+    expect(allMyChore.length).toBeGreaterThanOrEqual(1)
+    expect(allTheirChore.length).toBeGreaterThanOrEqual(1)
+
+    // The other user's task row in the day view should have opacity-60
+    // Day view rows have the class pattern: flex items-center gap-4 py-4
+    const dayRows = document.querySelectorAll('.py-4.gap-4')
+    const theirRow = Array.from(dayRows).find((row) => row.textContent?.includes('Their chore'))
+    expect(theirRow?.className).toContain('opacity-60')
+
+    // Own task row should not have opacity-60
+    const myRow = Array.from(dayRows).find((row) => row.textContent?.includes('My chore'))
+    expect(myRow?.className).not.toContain('opacity-60')
+
+    // The other user's avatar should appear next to their chore
+    expect(screen.getByLabelText('Bob')).toBeInTheDocument()
+  })
+
+  it('shows all upcoming tasks regardless of assignment', () => {
+    render(
+      <ScheduleView
+        userId="u1"
+        year={2026}
+        monthIndex={1}
+        initialSelectedDayKey="2026-02-06"
+        chores={[
+          { id: 'c1', title: 'My upcoming', frequency: 'DAILY', assigneeIds: ['u1'] },
+          { id: 'c2', title: 'Their upcoming', frequency: 'DAILY', assigneeIds: ['u2'] },
+          { id: 'c3', title: 'Unassigned upcoming', frequency: 'DAILY', assigneeIds: [] },
+        ]}
+        monthSchedules={[]}
+        upcomingSchedules={[
+          {
+            id: 's1',
+            scheduledFor: '2026-02-07T00:00:00.000Z',
+            slotType: 'DAILY',
+            suggested: false,
+            completed: false,
+            chore: { id: 'c1', title: 'My upcoming', frequency: 'DAILY', assigneeIds: ['u1'] },
+          },
+          {
+            id: 's2',
+            scheduledFor: '2026-02-08T00:00:00.000Z',
+            slotType: 'DAILY',
+            suggested: false,
+            completed: false,
+            chore: { id: 'c2', title: 'Their upcoming', frequency: 'DAILY', assigneeIds: ['u2'] },
+          },
+          {
+            id: 's3',
+            scheduledFor: '2026-02-09T00:00:00.000Z',
+            slotType: 'DAILY',
+            suggested: false,
+            completed: false,
+            chore: { id: 'c3', title: 'Unassigned upcoming', frequency: 'DAILY', assigneeIds: [] },
+          },
+        ]}
+        users={defaultUsers}
+      />
+    )
+
+    // All three upcoming tasks should be visible (may also appear in Plan section)
+    expect(screen.getAllByText('My upcoming').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('Their upcoming').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('Unassigned upcoming').length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('marks task as completed when any user completes it', () => {
+    render(
+      <ScheduleView
+        userId="u1"
+        year={2026}
+        monthIndex={1}
+        initialSelectedDayKey="2026-02-06"
+        chores={[
+          { id: 'c1', title: 'Shared chore', frequency: 'DAILY', assigneeIds: ['u1'] },
+        ]}
+        monthSchedules={[
+          {
+            id: 's1',
+            scheduledFor: '2026-02-06T00:00:00.000Z',
+            slotType: 'DAILY',
+            suggested: false,
+            completed: true,
+            completedByUserId: 'u2',
+            chore: { id: 'c1', title: 'Shared chore', frequency: 'DAILY', assigneeIds: ['u1'] },
+          },
+        ]}
+        upcomingSchedules={[]}
+        users={defaultUsers}
+      />
+    )
+
+    // Task should show as completed
+    const checkbox = screen.getByRole('checkbox')
+    expect(checkbox).toBeChecked()
+
+    // Should show who completed it
+    expect(screen.getByText(/completed by Bob/)).toBeInTheDocument()
   })
 })

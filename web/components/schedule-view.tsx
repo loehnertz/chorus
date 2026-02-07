@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { FrequencyBadge } from '@/components/ui/frequency-badge'
+import { Avatar } from '@/components/ui/avatar'
 import { CompletionCheckbox } from '@/components/completion-checkbox'
 import { SlotPicker, type SlotPickerChore } from '@/components/slot-picker'
 import { PageFadeIn } from '@/components/page-fade-in'
@@ -32,6 +33,7 @@ export type ScheduleViewItem = {
   slotType: Frequency
   suggested: boolean
   completed: boolean
+  completedByUserId?: string | null
   chore: {
     id: string
     title: string
@@ -50,6 +52,7 @@ export interface ScheduleViewProps {
   monthSchedules: ScheduleViewItem[]
   upcomingSchedules: ScheduleViewItem[]
   yearlyScheduledChoreIds?: string[]
+  users: Array<{ id: string; name: string | null }>
   className?: string
 }
 
@@ -78,10 +81,6 @@ function formatDayTitleUtc(dayKey: string) {
   }).format(dt)
 }
 
-function isAssignedOrUnassigned(assigneeIds: string[], userId: string) {
-  return assigneeIds.length === 0 || assigneeIds.includes(userId)
-}
-
 type PaceWarning = { title: string; description: string }
 
 function countWeekSlotsInMonthUtc(year: number, monthIndex: number) {
@@ -105,6 +104,7 @@ export function ScheduleView({
   monthSchedules,
   upcomingSchedules,
   yearlyScheduledChoreIds,
+  users,
   className,
 }: ScheduleViewProps) {
   const router = useRouter()
@@ -356,9 +356,7 @@ export function ScheduleView({
       }
 
       setItems((prev) => [...prev, nextItem])
-      if (isAssignedOrUnassigned(nextItem.chore.assigneeIds, userId)) {
-        setUpcoming((prev) => [...prev, nextItem])
-      }
+      setUpcoming((prev) => [...prev, nextItem])
 
       toast.success('Added to schedule')
       router.refresh()
@@ -556,24 +554,31 @@ export function ScheduleView({
               <CardTitle className="text-xl md:text-2xl">Upcoming</CardTitle>
             </CardHeader>
             <CardContent>
-              {upcoming.filter((u) => isAssignedOrUnassigned(u.chore.assigneeIds, userId)).length === 0 ? (
+              {upcoming.length === 0 ? (
                 <p className="text-sm text-[var(--foreground)]/50">No upcoming tasks.</p>
               ) : (
                 <div className="space-y-3">
                   {upcoming
-                    .filter((u) => isAssignedOrUnassigned(u.chore.assigneeIds, userId))
                     .slice()
                     .sort((a, b) => new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime())
                     .slice(0, 8)
                     .map((u) => {
                       const key = dayKeyUtc(new Date(u.scheduledFor))
+                      const isOthers = u.chore.assigneeIds.length > 0 && !u.chore.assigneeIds.includes(userId)
+                      const primaryAssigneeId = isOthers ? u.chore.assigneeIds[0] : null
+                      const primaryAssignee = primaryAssigneeId ? users.find((usr) => usr.id === primaryAssigneeId) : null
                       return (
-                        <div key={u.id} className="flex items-start justify-between gap-4">
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-[var(--font-display)] text-[var(--foreground)]">
-                              {u.chore.title}
-                            </p>
-                            <p className="mt-0.5 text-xs text-[var(--foreground)]/50">{formatDayTitleUtc(key)}</p>
+                        <div key={u.id} className={cn('flex items-start justify-between gap-4', isOthers && 'opacity-60')}>
+                          <div className="flex min-w-0 items-start gap-2">
+                            {primaryAssignee && (
+                              <Avatar name={primaryAssignee.name ?? '?'} userId={primaryAssignee.id} size="xs" className="mt-0.5 shrink-0" />
+                            )}
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-[var(--font-display)] text-[var(--foreground)]">
+                                {u.chore.title}
+                              </p>
+                              <p className="mt-0.5 text-xs text-[var(--foreground)]/50">{formatDayTitleUtc(key)}</p>
+                            </div>
                           </div>
                           <FrequencyBadge frequency={u.chore.frequency} />
                         </div>
@@ -601,27 +606,38 @@ export function ScheduleView({
                 <div className="divide-y divide-[var(--border)]">
                   {selectedDayItems.map((task) => {
                     const disabled = task.completed || savingId === `complete:${task.id}`
+                    const isOthers = task.chore.assigneeIds.length > 0 && !task.chore.assigneeIds.includes(userId)
+                    const primaryAssigneeId = isOthers ? task.chore.assigneeIds[0] : null
+                    const primaryAssignee = primaryAssigneeId ? users.find((usr) => usr.id === primaryAssigneeId) : null
+                    const completedByOther = task.completed && task.completedByUserId && task.completedByUserId !== userId
+                    const completer = completedByOther ? users.find((usr) => usr.id === task.completedByUserId) : null
                     return (
-                      <div key={task.id} className="flex items-center gap-4 py-4">
+                      <div key={task.id} className={cn('flex items-center gap-4 py-4', isOthers && 'opacity-60')}>
                         <CompletionCheckbox
                           checked={task.completed}
                           disabled={disabled}
                           onCheckedChange={() => markDone(task)}
                         />
                         <div className="min-w-0 flex-1">
-                          <p
-                            className={cn(
-                              'truncate text-sm font-[var(--font-display)] font-medium',
-                              task.completed
-                                ? 'text-[var(--foreground)]/50 line-through'
-                                : 'text-[var(--foreground)]'
+                          <div className="flex items-center gap-1.5">
+                            {primaryAssignee && (
+                              <Avatar name={primaryAssignee.name ?? '?'} userId={primaryAssignee.id} size="xs" className="shrink-0" />
                             )}
-                          >
-                            {task.chore.title}
-                          </p>
+                            <p
+                              className={cn(
+                                'truncate text-sm font-[var(--font-display)] font-medium',
+                                task.completed
+                                  ? 'text-[var(--foreground)]/50 line-through'
+                                  : 'text-[var(--foreground)]'
+                              )}
+                            >
+                              {task.chore.title}
+                            </p>
+                          </div>
                           <p className="mt-0.5 text-xs text-[var(--foreground)]/50">
                             Slot: {task.slotType.toLowerCase()}
                             {task.suggested ? ' · suggested' : ''}
+                            {completer ? ` · completed by ${completer.name ?? 'someone'}` : ''}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
