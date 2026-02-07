@@ -2,7 +2,10 @@ jest.mock('@prisma/client', () => ({
   Frequency: {
     DAILY: 'DAILY',
     WEEKLY: 'WEEKLY',
+    BIWEEKLY: 'BIWEEKLY',
     MONTHLY: 'MONTHLY',
+    BIMONTHLY: 'BIMONTHLY',
+    SEMIANNUAL: 'SEMIANNUAL',
     YEARLY: 'YEARLY',
   },
 }));
@@ -25,8 +28,11 @@ import { checkCascadePace, getCascadeSourceFrequency, suggestCascadedChore } fro
 describe('getCascadeSourceFrequency', () => {
   it('should map current frequency to source frequency', () => {
     expect(getCascadeSourceFrequency('DAILY')).toBe('WEEKLY');
-    expect(getCascadeSourceFrequency('WEEKLY')).toBe('MONTHLY');
-    expect(getCascadeSourceFrequency('MONTHLY')).toBe('YEARLY');
+    expect(getCascadeSourceFrequency('WEEKLY')).toBe('BIWEEKLY');
+    expect(getCascadeSourceFrequency('BIWEEKLY')).toBe('MONTHLY');
+    expect(getCascadeSourceFrequency('MONTHLY')).toBe('BIMONTHLY');
+    expect(getCascadeSourceFrequency('BIMONTHLY')).toBe('SEMIANNUAL');
+    expect(getCascadeSourceFrequency('SEMIANNUAL')).toBe('YEARLY');
     expect(getCascadeSourceFrequency('YEARLY')).toBeNull();
   });
 });
@@ -83,16 +89,16 @@ describe('suggestCascadedChore', () => {
     (db.schedule.findMany as jest.Mock).mockResolvedValue([]);
     (db.chore.findMany as jest.Mock).mockResolvedValue([
       {
-        id: 'monthly-1',
+        id: 'biweekly-1',
         title: 'Already done',
-        frequency: 'MONTHLY',
+        frequency: 'BIWEEKLY',
         assignments: [],
         completions: [{ completedAt: new Date('2026-01-01T00:00:00Z') }],
       },
       {
-        id: 'monthly-2',
+        id: 'biweekly-2',
         title: 'Never done',
-        frequency: 'MONTHLY',
+        frequency: 'BIWEEKLY',
         assignments: [],
         completions: [],
       },
@@ -103,23 +109,23 @@ describe('suggestCascadedChore', () => {
       now: new Date('2026-02-01T00:00:00Z'),
     });
 
-    expect(res?.chore.id).toBe('monthly-2');
+    expect(res?.chore.id).toBe('biweekly-2');
   });
 
   it('should prioritize least-recently completed chores among completed', async () => {
     (db.schedule.findMany as jest.Mock).mockResolvedValue([]);
     (db.chore.findMany as jest.Mock).mockResolvedValue([
       {
-        id: 'yearly-1',
+        id: 'bimonthly-1',
         title: 'More recent',
-        frequency: 'YEARLY',
+        frequency: 'BIMONTHLY',
         assignments: [],
         completions: [{ completedAt: new Date('2026-01-10T00:00:00Z') }],
       },
       {
-        id: 'yearly-2',
+        id: 'bimonthly-2',
         title: 'Older',
-        frequency: 'YEARLY',
+        frequency: 'BIMONTHLY',
         assignments: [],
         completions: [{ completedAt: new Date('2025-01-10T00:00:00Z') }],
       },
@@ -130,7 +136,7 @@ describe('suggestCascadedChore', () => {
       now: new Date('2026-02-01T00:00:00Z'),
     });
 
-    expect(res?.chore.id).toBe('yearly-2');
+    expect(res?.chore.id).toBe('bimonthly-2');
   });
 
   it('should prefer assigned chores when userId is provided and eligible assigned chores exist', async () => {
@@ -170,8 +176,6 @@ describe('checkCascadePace', () => {
   it('should warn when remaining chores exceed remaining slots', async () => {
     (db.chore.count as jest.Mock).mockImplementation(async ({ where }: { where: { frequency: string } }) => {
       if (where.frequency === 'YEARLY') return 3;
-      if (where.frequency === 'MONTHLY') return 0;
-      if (where.frequency === 'WEEKLY') return 0;
       return 0;
     });
 

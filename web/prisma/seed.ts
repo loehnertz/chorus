@@ -25,11 +25,23 @@ const SAMPLE_CHORES: { title: string; frequency: Frequency; description?: string
   { title: 'Do laundry', frequency: 'WEEKLY', description: 'Wash, dry, fold, and put away' },
   { title: 'Water plants', frequency: 'WEEKLY' },
 
+  // Bi-weekly (2)
+  { title: 'Clean out car', frequency: 'BIWEEKLY', description: 'Remove trash, vacuum seats' },
+  { title: 'Wipe down appliances', frequency: 'BIWEEKLY' },
+
   // Monthly (4)
   { title: 'Deep clean fridge', frequency: 'MONTHLY', description: 'Remove expired items, wipe shelves' },
   { title: 'Clean windows', frequency: 'MONTHLY' },
   { title: 'Dust ceiling fans', frequency: 'MONTHLY' },
   { title: 'Organize pantry', frequency: 'MONTHLY', description: 'Check expiration dates, reorganize' },
+
+  // Bi-monthly (2)
+  { title: 'Deep clean bathroom tiles', frequency: 'BIMONTHLY', description: 'Scrub grout and reseal' },
+  { title: 'Rotate seasonal clothes', frequency: 'BIMONTHLY' },
+
+  // Semi-annual (2)
+  { title: 'Service HVAC system', frequency: 'SEMIANNUAL', description: 'Change filters, check ducts' },
+  { title: 'Deep clean carpets', frequency: 'SEMIANNUAL', description: 'Steam clean all carpeted rooms' },
 
   // Yearly (3)
   { title: 'Deep clean oven', frequency: 'YEARLY', description: 'Full interior cleaning cycle' },

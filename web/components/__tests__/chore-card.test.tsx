@@ -15,7 +15,7 @@ describe('ChoreCard', () => {
     )
 
     expect(screen.getByText('Vacuum')).toBeInTheDocument()
-    expect(screen.getByText('WEEKLY')).toBeInTheDocument()
+    expect(screen.getByText('Weekly')).toBeInTheDocument()
     expect(screen.getByText('3 done')).toBeInTheDocument()
     expect(screen.getByLabelText('Alice')).toBeInTheDocument()
   })

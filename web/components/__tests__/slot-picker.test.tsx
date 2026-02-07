@@ -55,6 +55,9 @@ describe('SlotPicker', () => {
       />
     )
 
+    const scheduleButton = screen.getByRole('button', { name: 'Schedule' })
+    expect(scheduleButton).toBeDisabled()
+
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/schedules/suggest',
@@ -64,7 +67,10 @@ describe('SlotPicker', () => {
       })
     )
 
-    await user.click(screen.getByRole('button', { name: 'Schedule' }))
+    await waitFor(() => expect(scheduleButton).toBeEnabled())
+    expect(screen.queryByText(/Selected:/i)).not.toBeInTheDocument()
+
+    await user.click(scheduleButton)
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
     expect(fetchMock).toHaveBeenLastCalledWith(
@@ -124,6 +130,8 @@ describe('SlotPicker', () => {
     const manualButton = manualTitle.closest('button')
     expect(manualButton).toBeTruthy()
     await user.click(manualButton!)
+
+    expect(screen.queryByText(/Selected:/i)).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Schedule' }))
 

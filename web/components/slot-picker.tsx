@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { RefreshCw, Sparkles } from 'lucide-react'
 import type { Frequency } from '@/types/frequency'
+import { FREQUENCY_LABELS } from '@/types/frequency'
 import { getCascadeSourceFrequency } from '@/lib/cascade'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -147,7 +148,7 @@ export function SlotPicker({
             Cascade pick
           </p>
           <p className="mt-1 text-sm font-[var(--font-display)] font-medium text-[var(--foreground)]">
-            Pull 1 {sourceFrequency.charAt(0) + sourceFrequency.slice(1).toLowerCase()} chore into this {slotType.charAt(0) + slotType.slice(1).toLowerCase()} slot
+            Pull 1 {FREQUENCY_LABELS[sourceFrequency]} chore into this {FREQUENCY_LABELS[slotType]} slot
           </p>
         </div>
 
@@ -181,7 +182,7 @@ export function SlotPicker({
       <div className="mt-4 grid grid-cols-1 gap-2">
         {sourceChores.length === 0 ? (
           <div className="col-span-full rounded-[var(--radius-md)] border border-dashed border-[var(--border)] p-4">
-            <p className="text-sm text-[var(--foreground)]/60">No {sourceFrequency.toLowerCase()} chores available</p>
+            <p className="text-sm text-[var(--foreground)]/60">No {FREQUENCY_LABELS[sourceFrequency].toLowerCase()} chores available</p>
           </div>
         ) : (
           sourceChores
@@ -238,9 +239,7 @@ export function SlotPicker({
       <div className="mt-4 flex items-center justify-between gap-3">
         <p className="text-xs text-[var(--foreground)]/60">
           {selected ? (
-            <>
-              Selected: <span className="font-[var(--font-display)]">{selected.title}</span>
-            </>
+            <span className="sr-only">Selected {selected.title}</span>
           ) : (
             'Select a chore to schedule'
           )}

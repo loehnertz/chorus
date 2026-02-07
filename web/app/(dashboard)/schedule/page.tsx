@@ -1,7 +1,7 @@
 import { unstable_noStore as noStore } from 'next/cache'
 import { requireApprovedUser } from '@/lib/auth/require-approval'
 import { db } from '@/lib/db'
-import { startOfTodayUtc } from '@/lib/date'
+import { startOfTodayUtc, startOfHalfYearUtc, endOfHalfYearUtc } from '@/lib/date'
 import { getTodayDayKeyUtc } from '@/lib/calendar'
 import { ScheduleView } from '@/components/schedule-view'
 import { ensureDailySchedules } from '@/lib/auto-schedule'
@@ -62,11 +62,14 @@ export default async function SchedulePage({
   const yearStart = new Date(Date.UTC(year, 0, 1))
   const yearEnd = new Date(Date.UTC(year + 1, 0, 1))
 
+  const halfYearStart = startOfHalfYearUtc(now)
+  const halfYearEnd = endOfHalfYearUtc(now)
+
   const upcomingStart = startOfTodayUtc(now)
   const upcomingEnd = new Date(upcomingStart)
   upcomingEnd.setUTCDate(upcomingEnd.getUTCDate() + 14)
 
-  const [chores, monthSchedulesRaw, upcomingRaw, yearlyScheduledRaw, users] = await Promise.all([
+  const [chores, monthSchedulesRaw, upcomingRaw, yearlyScheduledRaw, semiannualScheduledRaw, users] = await Promise.all([
     db.chore.findMany({
       select: {
         id: true,
@@ -121,6 +124,14 @@ export default async function SchedulePage({
       distinct: ['choreId'],
       select: { choreId: true },
     }),
+    db.schedule.findMany({
+      where: {
+        scheduledFor: { gte: halfYearStart, lt: halfYearEnd },
+        chore: { frequency: 'SEMIANNUAL' },
+      },
+      distinct: ['choreId'],
+      select: { choreId: true },
+    }),
     db.user.findMany({
       where: { approved: true },
       select: { id: true, name: true, image: true },
@@ -161,7 +172,10 @@ export default async function SchedulePage({
       chores={mappedChores}
       monthSchedules={monthSchedulesRaw.map(mapSchedule)}
       upcomingSchedules={upcomingRaw.map(mapSchedule)}
-      yearlyScheduledChoreIds={yearlyScheduledRaw.map((r) => r.choreId)}
+      longRangeScheduledChoreIds={{
+        YEARLY: yearlyScheduledRaw.map((r) => r.choreId),
+        SEMIANNUAL: semiannualScheduledRaw.map((r) => r.choreId),
+      }}
       users={users}
     />
   )

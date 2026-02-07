@@ -4,7 +4,7 @@ import * as React from 'react'
 import { toast } from 'sonner'
 import { Plus } from 'lucide-react'
 import type { Frequency } from '@/types/frequency'
-import { FREQUENCIES } from '@/types/frequency'
+import { FREQUENCIES, FREQUENCY_LABELS } from '@/types/frequency'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -219,30 +219,14 @@ export function ChoreForm({ open, onOpenChange, users, initialValues, onSaved }:
                 <SelectValue placeholder="Select frequency" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="DAILY">
-                  <div className="flex items-center gap-2">
-                    <FrequencyBadge frequency="DAILY" />
-                    <span>Daily</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="WEEKLY">
-                  <div className="flex items-center gap-2">
-                    <FrequencyBadge frequency="WEEKLY" />
-                    <span>Weekly</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="MONTHLY">
-                  <div className="flex items-center gap-2">
-                    <FrequencyBadge frequency="MONTHLY" />
-                    <span>Monthly</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="YEARLY">
-                  <div className="flex items-center gap-2">
-                    <FrequencyBadge frequency="YEARLY" />
-                    <span>Yearly</span>
-                  </div>
-                </SelectItem>
+                {FREQUENCIES.map((f) => (
+                  <SelectItem key={f} value={f}>
+                    <div className="flex items-center gap-2">
+                      <FrequencyBadge frequency={f} />
+                      <span>{FREQUENCY_LABELS[f]}</span>
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             {errors.frequency ? (

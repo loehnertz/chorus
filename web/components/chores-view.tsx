@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { ClipboardList, Plus } from 'lucide-react'
 import type { Frequency } from '@/types/frequency'
-import { FREQUENCIES } from '@/types/frequency'
+import { FREQUENCIES, FREQUENCY_LABELS } from '@/types/frequency'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -126,7 +126,7 @@ export function ChoresView({ chores, users }: ChoresViewProps) {
             )}
             onClick={() => setFilter(f)}
           >
-            {f.charAt(0) + f.slice(1).toLowerCase()}
+            {FREQUENCY_LABELS[f]}
           </button>
         ))}
       </div>

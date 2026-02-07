@@ -23,8 +23,11 @@ describe('date utils (UTC)', () => {
 describe('cascade utils', () => {
   it('maps to the next higher frequency', () => {
     expect(getCascadeSourceFrequency('DAILY')).toBe('WEEKLY')
-    expect(getCascadeSourceFrequency('WEEKLY')).toBe('MONTHLY')
-    expect(getCascadeSourceFrequency('MONTHLY')).toBe('YEARLY')
+    expect(getCascadeSourceFrequency('WEEKLY')).toBe('BIWEEKLY')
+    expect(getCascadeSourceFrequency('BIWEEKLY')).toBe('MONTHLY')
+    expect(getCascadeSourceFrequency('MONTHLY')).toBe('BIMONTHLY')
+    expect(getCascadeSourceFrequency('BIMONTHLY')).toBe('SEMIANNUAL')
+    expect(getCascadeSourceFrequency('SEMIANNUAL')).toBe('YEARLY')
     expect(getCascadeSourceFrequency('YEARLY')).toBeNull()
   })
 })

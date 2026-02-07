@@ -1,6 +1,21 @@
 import { Frequency } from '@prisma/client';
 
 import { db } from '@/lib/db';
+import {
+  startOfTodayUtc,
+  startOfWeekUtc,
+  endOfWeekUtc,
+  startOfBiweekUtc,
+  endOfBiweekUtc,
+  startOfBimonthUtc,
+  endOfBimonthUtc,
+  startOfHalfYearUtc,
+  endOfHalfYearUtc,
+  startOfMonthUtc,
+  endOfMonthUtc,
+  startOfYearUtc,
+  endOfYearUtc,
+} from '@/lib/date';
 
 export type PaceWarning = {
   sourceFrequency: Frequency;
@@ -27,64 +42,49 @@ export type CascadeSuggestion = {
 
 type UtcRange = { start: Date; end: Date };
 
-function startOfDayUtc(d: Date) {
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-}
-
-function startOfWeekUtc(d: Date) {
-  // Week starts Monday.
-  const day = d.getUTCDay(); // 0..6 (Sun..Sat)
-  const mondayDelta = (day + 6) % 7;
-  const startDay = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - mondayDelta));
-  return startOfDayUtc(startDay);
-}
-
-function endOfWeekUtc(d: Date) {
-  const start = startOfWeekUtc(d);
-  return new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
-}
-
-function startOfMonthUtc(d: Date) {
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
-}
-
-function endOfMonthUtc(d: Date) {
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1));
-}
-
-function startOfYearUtc(d: Date) {
-  return new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-}
-
-function endOfYearUtc(d: Date) {
-  return new Date(Date.UTC(d.getUTCFullYear() + 1, 0, 1));
-}
-
 function getCycleRangeForSourceFrequency(sourceFrequency: Frequency, now: Date): UtcRange {
   switch (sourceFrequency) {
     case Frequency.WEEKLY:
       return { start: startOfWeekUtc(now), end: endOfWeekUtc(now) };
+    case Frequency.BIWEEKLY:
+      return { start: startOfBiweekUtc(now), end: endOfBiweekUtc(now) };
     case Frequency.MONTHLY:
       return { start: startOfMonthUtc(now), end: endOfMonthUtc(now) };
+    case Frequency.BIMONTHLY:
+      return { start: startOfBimonthUtc(now), end: endOfBimonthUtc(now) };
+    case Frequency.SEMIANNUAL:
+      return { start: startOfHalfYearUtc(now), end: endOfHalfYearUtc(now) };
     case Frequency.YEARLY:
       return { start: startOfYearUtc(now), end: endOfYearUtc(now) };
     default:
       // DAILY isn't a cascade source.
-      return { start: startOfDayUtc(now), end: new Date(startOfDayUtc(now).getTime() + 24 * 60 * 60 * 1000) };
+      return {
+        start: startOfTodayUtc(now),
+        end: new Date(startOfTodayUtc(now).getTime() + 24 * 60 * 60 * 1000),
+      };
   }
 }
 
 function getRemainingSlotsForSourceFrequency(sourceFrequency: Frequency, now: Date, cycleEnd: Date) {
-  const dayStart = startOfDayUtc(now);
+  const dayStart = startOfTodayUtc(now);
   const remainingDays = Math.max(0, Math.ceil((cycleEnd.getTime() - dayStart.getTime()) / (24 * 60 * 60 * 1000)));
 
   switch (sourceFrequency) {
     case Frequency.WEEKLY:
       // Weekly chores should fit into remaining days of the week (1 per day).
       return remainingDays;
+    case Frequency.BIWEEKLY:
+      // Bi-weekly chores: remaining weeks in bi-week (max 2).
+      return Math.max(1, Math.ceil(remainingDays / 7));
     case Frequency.MONTHLY:
       // Monthly chores should fit into remaining weeks of the month (1 per week).
       return Math.max(1, Math.ceil(remainingDays / 7));
+    case Frequency.BIMONTHLY:
+      // Bi-monthly chores: remaining months in bi-month (max 2).
+      return Math.max(1, Math.ceil(remainingDays / 30));
+    case Frequency.SEMIANNUAL:
+      // Semi-annual chores: remaining bi-months in half-year (max 3).
+      return Math.max(1, Math.ceil(remainingDays / 60));
     case Frequency.YEARLY:
       // Yearly chores should fit into remaining months of the year (1 per month).
       return 12 - now.getUTCMonth();
@@ -96,8 +96,11 @@ function getRemainingSlotsForSourceFrequency(sourceFrequency: Frequency, now: Da
 export function getCascadeSourceFrequency(currentFrequency: Frequency | `${Frequency}`): Frequency | null {
   const freq = currentFrequency as Frequency;
   if (freq === Frequency.DAILY) return Frequency.WEEKLY;
-  if (freq === Frequency.WEEKLY) return Frequency.MONTHLY;
-  if (freq === Frequency.MONTHLY) return Frequency.YEARLY;
+  if (freq === Frequency.WEEKLY) return Frequency.BIWEEKLY;
+  if (freq === Frequency.BIWEEKLY) return Frequency.MONTHLY;
+  if (freq === Frequency.MONTHLY) return Frequency.BIMONTHLY;
+  if (freq === Frequency.BIMONTHLY) return Frequency.SEMIANNUAL;
+  if (freq === Frequency.SEMIANNUAL) return Frequency.YEARLY;
   return null;
 }
 
@@ -174,7 +177,14 @@ export async function suggestCascadedChore(params: {
 
 export async function checkCascadePace(params?: { now?: Date }): Promise<PaceWarning[]> {
   const now = params?.now ?? new Date();
-  const sources: Frequency[] = [Frequency.WEEKLY, Frequency.MONTHLY, Frequency.YEARLY];
+  const sources: Frequency[] = [
+    Frequency.WEEKLY,
+    Frequency.BIWEEKLY,
+    Frequency.MONTHLY,
+    Frequency.BIMONTHLY,
+    Frequency.SEMIANNUAL,
+    Frequency.YEARLY,
+  ];
 
   const warnings: PaceWarning[] = [];
 

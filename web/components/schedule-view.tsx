@@ -5,9 +5,19 @@ import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { AlertTriangle, ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react'
 import type { Frequency } from '@/types/frequency'
+import { FREQUENCY_LABELS } from '@/types/frequency'
 import { cn } from '@/lib/utils'
 import { buildMonthGridUtc, getMonthTitleUtc } from '@/lib/calendar'
-import { dayKeyUtc, startOfWeekUtc } from '@/lib/date'
+import {
+  dayKeyUtc,
+  startOfWeekUtc,
+  startOfBiweekUtc,
+  endOfBiweekUtc,
+  startOfBimonthUtc,
+  endOfBimonthUtc,
+  startOfHalfYearUtc,
+  endOfHalfYearUtc,
+} from '@/lib/date'
 import { getCascadeSourceFrequency } from '@/lib/cascade'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -52,12 +62,12 @@ export interface ScheduleViewProps {
   chores: ScheduleViewChore[]
   monthSchedules: ScheduleViewItem[]
   upcomingSchedules: ScheduleViewItem[]
-  yearlyScheduledChoreIds?: string[]
+  longRangeScheduledChoreIds?: Record<string, string[]>
   users: Array<{ id: string; name: string | null; image?: string | null }>
   className?: string
 }
 
-const VIEW_MODES: Array<'DAILY' | 'WEEKLY' | 'MONTHLY'> = ['DAILY', 'WEEKLY', 'MONTHLY']
+const VIEW_MODES: Frequency[] = ['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'BIMONTHLY', 'SEMIANNUAL']
 
 function pad2(n: number) {
   return String(n).padStart(2, '0')
@@ -96,6 +106,33 @@ function countWeekSlotsInMonthUtc(year: number, monthIndex: number) {
   return Math.floor(diffDays / 7) + 1
 }
 
+function getCycleRangeForViewMode(
+  viewMode: Frequency,
+  selectedDate: Date,
+  year: number,
+  monthIndex: number
+): { start: Date; end: Date } | null {
+  const cascadeSource = getCascadeSourceFrequency(viewMode)
+  if (!cascadeSource) return null
+
+  switch (cascadeSource) {
+    case 'WEEKLY':
+      return { start: startOfWeekUtc(selectedDate), end: new Date(startOfWeekUtc(selectedDate).getTime() + 7 * 24 * 60 * 60 * 1000) }
+    case 'BIWEEKLY':
+      return { start: startOfBiweekUtc(selectedDate), end: endOfBiweekUtc(selectedDate) }
+    case 'MONTHLY':
+      return { start: new Date(Date.UTC(year, monthIndex, 1)), end: new Date(Date.UTC(year, monthIndex + 1, 1)) }
+    case 'BIMONTHLY':
+      return { start: startOfBimonthUtc(selectedDate), end: endOfBimonthUtc(selectedDate) }
+    case 'SEMIANNUAL':
+      return { start: startOfHalfYearUtc(selectedDate), end: endOfHalfYearUtc(selectedDate) }
+    case 'YEARLY':
+      return { start: new Date(Date.UTC(year, 0, 1)), end: new Date(Date.UTC(year + 1, 0, 1)) }
+    default:
+      return null
+  }
+}
+
 export function ScheduleView({
   userId,
   year,
@@ -105,7 +142,7 @@ export function ScheduleView({
   chores,
   monthSchedules,
   upcomingSchedules,
-  yearlyScheduledChoreIds,
+  longRangeScheduledChoreIds,
   users,
   className,
 }: ScheduleViewProps) {
@@ -118,9 +155,15 @@ export function ScheduleView({
   const [items, setItems] = React.useState<ScheduleViewItem[]>(monthSchedules)
   const [upcoming, setUpcoming] = React.useState<ScheduleViewItem[]>(upcomingSchedules)
 
-  const scheduledYearlyChoreIdSet = React.useMemo(() => {
-    return new Set(yearlyScheduledChoreIds ?? [])
-  }, [yearlyScheduledChoreIds])
+  const longRangeScheduledSets = React.useMemo(() => {
+    const sets: Record<string, Set<string>> = {}
+    if (longRangeScheduledChoreIds) {
+      for (const [freq, ids] of Object.entries(longRangeScheduledChoreIds)) {
+        sets[freq] = new Set(ids)
+      }
+    }
+    return sets
+  }, [longRangeScheduledChoreIds])
 
   React.useEffect(() => {
     setItems(monthSchedules)
@@ -161,108 +204,97 @@ export function ScheduleView({
 
   const paceWarnings: PaceWarning[] = React.useMemo(() => {
     const warnings: PaceWarning[] = []
-
     const selectedDate = new Date(`${selectedDayKey}T00:00:00.000Z`)
-    const totalWeekly = chores.filter((c) => c.frequency === 'WEEKLY').length
-    const totalMonthly = chores.filter((c) => c.frequency === 'MONTHLY').length
-    const totalYearly = chores.filter((c) => c.frequency === 'YEARLY').length
+
+    const cascadeSource = getCascadeSourceFrequency(viewMode)
+    if (!cascadeSource) return warnings
+
+    const totalSourceChores = chores.filter((c) => c.frequency === cascadeSource).length
+    if (totalSourceChores === 0) return warnings
+
+    const range = getCycleRangeForViewMode(viewMode, selectedDate, year, monthIndex)
+    if (!range) return warnings
+
+    // Check if long-range data is available for this source frequency
+    const longRangeSet = longRangeScheduledSets[cascadeSource]
+
+    // Count scheduled source chores in the cycle range
+    const scheduledSourceIds = longRangeSet
+      ? longRangeSet
+      : new Set(
+          items
+            .filter((s) => {
+              const dt = new Date(s.scheduledFor)
+              return dt >= range.start && dt < range.end && s.chore.frequency === cascadeSource
+            })
+            .map((s) => s.chore.id)
+        )
+
+    const backlog = totalSourceChores - scheduledSourceIds.size
+    const sourceLabel = FREQUENCY_LABELS[cascadeSource].toLowerCase()
+
+    // Calculate remaining slots based on view mode
+    let slotsTotal: number
+    let slotsRemaining: number
 
     if (viewMode === 'DAILY') {
-      if (totalWeekly > 7) {
-        warnings.push({
-          title: 'Weekly capacity warning',
-          description: `You have ${totalWeekly} weekly chores but the default pace is 1 per day (7 per week). Plan to double up on some days.`,
-        })
-      }
-
-      const weekStart = startOfWeekUtc(selectedDate)
-      const weekEnd = new Date(weekStart)
-      weekEnd.setUTCDate(weekEnd.getUTCDate() + 7)
-
-      const scheduledWeeklyIds = new Set(
-        items
-          .filter((s) => {
-            const dt = new Date(s.scheduledFor)
-            return dt >= weekStart && dt < weekEnd && s.chore.frequency === 'WEEKLY'
-          })
-          .map((s) => s.chore.id)
-      )
-
-      const backlog = totalWeekly - scheduledWeeklyIds.size
-      const day = selectedDate.getUTCDay() // 0 (Sun) .. 6 (Sat)
+      // Daily view: cascade source is WEEKLY, slots are days in the week
+      slotsTotal = 7
+      const day = selectedDate.getUTCDay()
       const daysSinceMonday = (day + 6) % 7
-      const daysRemaining = 7 - daysSinceMonday
-
-      if (backlog > daysRemaining) {
-        warnings.push({
-          title: 'Behind weekly pace',
-          description: `${backlog} weekly chores are still unscheduled for this week, with ${daysRemaining} day${daysRemaining === 1 ? '' : 's'} left at the default pace.`,
-        })
-      }
-    }
-
-    if (viewMode === 'WEEKLY') {
-      const monthStart = new Date(Date.UTC(year, monthIndex, 1))
+      slotsRemaining = 7 - daysSinceMonday
+    } else if (viewMode === 'WEEKLY') {
+      // Weekly view: cascade source is BIWEEKLY, slots are weeks in bi-week (max 2)
+      slotsTotal = 2
+      const biweekStart = startOfBiweekUtc(selectedDate)
+      const weekStart = startOfWeekUtc(selectedDate)
+      slotsRemaining = weekStart.getTime() === biweekStart.getTime() ? 2 : 1
+    } else if (viewMode === 'BIWEEKLY') {
+      // Biweekly view: cascade source is MONTHLY, slots are weeks in month
+      slotsTotal = countWeekSlotsInMonthUtc(year, monthIndex)
       const monthEnd = new Date(Date.UTC(year, monthIndex + 1, 1))
-
-      const scheduledMonthlyIds = new Set(
-        items
-          .filter((s) => {
-            const dt = new Date(s.scheduledFor)
-            return dt >= monthStart && dt < monthEnd && s.chore.frequency === 'MONTHLY'
-          })
-          .map((s) => s.chore.id)
-      )
-
-      const backlog = totalMonthly - scheduledMonthlyIds.size
-
       const lastDay = new Date(monthEnd)
       lastDay.setUTCDate(lastDay.getUTCDate() - 1)
-      const weekSlotsTotal = countWeekSlotsInMonthUtc(year, monthIndex)
-      const weekSlotsRemaining = (() => {
-        const start = startOfWeekUtc(selectedDate)
-        const end = startOfWeekUtc(lastDay)
-        const diffDays = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
-        return diffDays < 0 ? 0 : Math.floor(diffDays / 7) + 1
-      })()
-
-      if (totalMonthly > weekSlotsTotal) {
-        warnings.push({
-          title: 'Monthly capacity warning',
-          description: `You have ${totalMonthly} monthly chores but only ${weekSlotsTotal} week slot${weekSlotsTotal === 1 ? '' : 's'} in this month at the default pace. Plan to schedule multiple monthly chores in some weeks.`,
-        })
-      }
-
-      if (backlog > weekSlotsRemaining) {
-        warnings.push({
-          title: 'Behind monthly pace',
-          description: `${backlog} monthly chores are still unscheduled for this month, with ${weekSlotsRemaining} week slot${weekSlotsRemaining === 1 ? '' : 's'} left at the default pace.`,
-        })
-      }
+      const start = startOfWeekUtc(selectedDate)
+      const end = startOfWeekUtc(lastDay)
+      const diffDays = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+      slotsRemaining = diffDays < 0 ? 0 : Math.floor(diffDays / 7) + 1
+    } else if (viewMode === 'MONTHLY') {
+      // Monthly view: cascade source is BIMONTHLY, slots are months in bi-month (max 2)
+      slotsTotal = 2
+      const bimonthStart = startOfBimonthUtc(selectedDate)
+      slotsRemaining = selectedDate.getUTCMonth() === bimonthStart.getUTCMonth() ? 2 : 1
+    } else if (viewMode === 'BIMONTHLY') {
+      // Bimonthly view: cascade source is SEMIANNUAL, slots are bi-months in half-year (max 3)
+      slotsTotal = 3
+      const halfYearStart = startOfHalfYearUtc(selectedDate)
+      const bimonthStart = startOfBimonthUtc(selectedDate)
+      const monthsDiff = (bimonthStart.getUTCMonth() - halfYearStart.getUTCMonth())
+      slotsRemaining = 3 - Math.floor(monthsDiff / 2)
+    } else if (viewMode === 'SEMIANNUAL') {
+      // Semiannual view: cascade source is YEARLY, slots are months in year
+      slotsTotal = 12
+      slotsRemaining = 12 - monthIndex
+    } else {
+      return warnings
     }
 
-    if (viewMode === 'MONTHLY') {
-      const scheduledYearlyCount = scheduledYearlyChoreIdSet.size
-      const backlog = totalYearly - scheduledYearlyCount
-      const monthsRemaining = 12 - monthIndex
+    if (totalSourceChores > slotsTotal) {
+      warnings.push({
+        title: `${FREQUENCY_LABELS[cascadeSource]} capacity warning`,
+        description: `You have ${totalSourceChores} ${sourceLabel} chores but only ${slotsTotal} slot${slotsTotal === 1 ? '' : 's'} at the default pace. Plan to schedule multiple ${sourceLabel} chores in some slots.`,
+      })
+    }
 
-      if (totalYearly > 12) {
-        warnings.push({
-          title: 'Yearly capacity warning',
-          description: `You have ${totalYearly} yearly chores but only 12 months at the default pace (1 per month). Plan to schedule multiple yearly chores in some months.`,
-        })
-      }
-
-      if (backlog > monthsRemaining) {
-        warnings.push({
-          title: 'Behind yearly pace',
-          description: `${backlog} yearly chores are still unscheduled for this year, with ${monthsRemaining} month${monthsRemaining === 1 ? '' : 's'} left at the default pace.`,
-        })
-      }
+    if (backlog > slotsRemaining) {
+      warnings.push({
+        title: `Behind ${sourceLabel} pace`,
+        description: `${backlog} ${sourceLabel} chores are still unscheduled for this cycle, with ${slotsRemaining} slot${slotsRemaining === 1 ? '' : 's'} left at the default pace.`,
+      })
     }
 
     return warnings
-  }, [chores, items, monthIndex, selectedDayKey, scheduledYearlyChoreIdSet, viewMode, year])
+  }, [chores, items, monthIndex, selectedDayKey, longRangeScheduledSets, viewMode, year])
 
   const planChores = React.useMemo(() => {
     return chores
@@ -669,7 +701,7 @@ export function ScheduleView({
                             </p>
                           </div>
                           <p className="mt-0.5 truncate text-xs text-[var(--foreground)]/50">
-                            Slot: {task.slotType.charAt(0) + task.slotType.slice(1).toLowerCase()}
+                            Slot: {FREQUENCY_LABELS[task.slotType]}
                             {task.suggested ? ' · suggested' : ''}
                             {completer ? ` · completed by ${completer.name ?? 'someone'}` : ''}
                           </p>
@@ -734,18 +766,18 @@ export function ScheduleView({
                     )}
                     onClick={() => setViewMode(mode)}
                   >
-                    {mode.charAt(0) + mode.slice(1).toLowerCase()}
+                    {FREQUENCY_LABELS[mode]}
                   </button>
                 ))}
               </div>
 
               <div className="space-y-2">
                 <p className="text-xs uppercase tracking-wide font-[var(--font-display)] text-[var(--foreground)]/50">
-                  {viewMode.charAt(0) + viewMode.slice(1).toLowerCase()} chores
+                  {FREQUENCY_LABELS[viewMode]} chores
                 </p>
                 {planChores.length === 0 ? (
                   <p className="text-sm text-[var(--foreground)]/50">
-                    No {viewMode.toLowerCase()} chores yet
+                    No {FREQUENCY_LABELS[viewMode].toLowerCase()} chores yet
                   </p>
                 ) : (
                   <div className="space-y-2">
@@ -813,7 +845,7 @@ export function ScheduleView({
           confirmDeleteId
             ? (() => {
                 const item = items.find((i) => i.id === confirmDeleteId)
-                return item ? `This will remove \"${item.chore.title}\" from ${formatDayTitleUtc(dayKeyUtc(new Date(item.scheduledFor)))}.` : undefined
+                return item ? `This will remove "${item.chore.title}" from ${formatDayTitleUtc(dayKeyUtc(new Date(item.scheduledFor)))}.` : undefined
               })()
             : undefined
         }

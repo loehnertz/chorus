@@ -56,8 +56,8 @@ describe('ScheduleView', () => {
         todayDayKey="2026-02-06"
         initialSelectedDayKey="2026-02-06"
         chores={[
-          { id: 'c1', title: 'Daily', frequency: 'DAILY', assigneeIds: [] },
-          { id: 'c2', title: 'Daily 2', frequency: 'DAILY', assigneeIds: [] },
+          { id: 'c1', title: 'Wash dishes', frequency: 'DAILY', assigneeIds: [] },
+          { id: 'c2', title: 'Make bed', frequency: 'DAILY', assigneeIds: [] },
         ]}
         monthSchedules={[
           {
@@ -66,7 +66,7 @@ describe('ScheduleView', () => {
             slotType: 'DAILY',
             suggested: false,
             completed: false,
-            chore: { id: 'c1', title: 'Daily', frequency: 'DAILY', assigneeIds: [] },
+            chore: { id: 'c1', title: 'Wash dishes', frequency: 'DAILY', assigneeIds: [] },
           },
           {
             id: 's2',
@@ -74,7 +74,7 @@ describe('ScheduleView', () => {
             slotType: 'DAILY',
             suggested: false,
             completed: false,
-            chore: { id: 'c2', title: 'Daily 2', frequency: 'DAILY', assigneeIds: [] },
+            chore: { id: 'c2', title: 'Make bed', frequency: 'DAILY', assigneeIds: [] },
           },
         ]}
         upcomingSchedules={[]}
@@ -83,12 +83,12 @@ describe('ScheduleView', () => {
     )
 
     const firstCheckbox = screen.getByRole('checkbox')
-    expect(within(firstCheckbox.parentElement as HTMLElement).getByText('Daily')).toBeInTheDocument()
+    expect(within(firstCheckbox.parentElement as HTMLElement).getByText('Wash dishes')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /Select 2026-02-07/ }))
 
     const nextCheckbox = screen.getByRole('checkbox')
-    expect(within(nextCheckbox.parentElement as HTMLElement).getByText('Daily 2')).toBeInTheDocument()
+    expect(within(nextCheckbox.parentElement as HTMLElement).getByText('Make bed')).toBeInTheDocument()
   })
 
   it('adds a chore to the selected day', async () => {

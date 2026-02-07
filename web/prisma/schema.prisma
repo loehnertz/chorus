@@ -29,7 +29,7 @@ model Chore {
   id          String    @id @default(uuid())
   title       String
   description String?
-  frequency   Frequency // DAILY, WEEKLY, MONTHLY, YEARLY
+  frequency   Frequency // DAILY, WEEKLY, BIWEEKLY, MONTHLY, BIMONTHLY, SEMIANNUAL, YEARLY
 
   assignments ChoreAssignment[]
   schedules   Schedule[]
@@ -89,6 +89,9 @@ model ChoreCompletion {
 enum Frequency {
   DAILY
   WEEKLY
+  BIWEEKLY
   MONTHLY
+  BIMONTHLY
+  SEMIANNUAL
   YEARLY
 }
