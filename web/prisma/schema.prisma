@@ -91,4 +91,7 @@ enum Frequency {
   WEEKLY
   MONTHLY
   YEARLY
+  BIWEEKLY
+  BIMONTHLY
+  SEMIANNUAL
 }

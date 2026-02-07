@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext", "webworker"],
-    "types": ["@serwist/next/typings"],
+    "types": ["@serwist/next/typings", "jest", "@testing-library/jest-dom", "node"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,

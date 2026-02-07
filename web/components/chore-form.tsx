@@ -231,10 +231,28 @@ export function ChoreForm({ open, onOpenChange, users, initialValues, onSaved }:
                     <span>Weekly</span>
                   </div>
                 </SelectItem>
+                <SelectItem value="BIWEEKLY">
+                  <div className="flex items-center gap-2">
+                    <FrequencyBadge frequency="BIWEEKLY" />
+                    <span>Biweekly</span>
+                  </div>
+                </SelectItem>
                 <SelectItem value="MONTHLY">
                   <div className="flex items-center gap-2">
                     <FrequencyBadge frequency="MONTHLY" />
                     <span>Monthly</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="BIMONTHLY">
+                  <div className="flex items-center gap-2">
+                    <FrequencyBadge frequency="BIMONTHLY" />
+                    <span>Bimonthly</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="SEMIANNUAL">
+                  <div className="flex items-center gap-2">
+                    <FrequencyBadge frequency="SEMIANNUAL" />
+                    <span>Semiannual</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="YEARLY">

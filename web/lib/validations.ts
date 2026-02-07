@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const VALID_FREQUENCIES = ['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'] as const;
+const VALID_FREQUENCIES = ['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'BIMONTHLY', 'SEMIANNUAL', 'YEARLY'] as const;
 
 export const createChoreSchema = z.object({
   title: z.string().transform((s) => s.trim()).pipe(z.string().min(1, 'Title is required')),

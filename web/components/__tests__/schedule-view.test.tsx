@@ -37,8 +37,7 @@ describe('ScheduleView', () => {
     toastSuccess.mockReset()
     toastError.mockReset()
     toastMessage.mockReset()
-    // @ts-expect-error - test env
-    global.fetch = jest.fn()
+    ;(globalThis as unknown as { fetch: unknown }).fetch = jest.fn()
   })
 
   afterEach(() => {

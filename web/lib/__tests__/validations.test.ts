@@ -57,7 +57,7 @@ describe('createChoreSchema', () => {
   });
 
   it('should accept all valid frequencies', () => {
-    for (const freq of ['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']) {
+    for (const freq of ['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'BIMONTHLY', 'SEMIANNUAL', 'YEARLY']) {
       const result = createChoreSchema.safeParse({
         title: 'Test',
         frequency: freq,

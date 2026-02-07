@@ -5,7 +5,10 @@ jest.mock('@prisma/client', () => ({
   Frequency: {
     DAILY: 'DAILY',
     WEEKLY: 'WEEKLY',
+    BIWEEKLY: 'BIWEEKLY',
     MONTHLY: 'MONTHLY',
+    BIMONTHLY: 'BIMONTHLY',
+    SEMIANNUAL: 'SEMIANNUAL',
     YEARLY: 'YEARLY',
   },
 }));

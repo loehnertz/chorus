@@ -57,7 +57,15 @@ export interface ScheduleViewProps {
   className?: string
 }
 
-const VIEW_MODES: Array<'DAILY' | 'WEEKLY' | 'MONTHLY'> = ['DAILY', 'WEEKLY', 'MONTHLY']
+const VIEW_MODES: Frequency[] = [
+  'DAILY',
+  'WEEKLY',
+  'BIWEEKLY',
+  'MONTHLY',
+  'BIMONTHLY',
+  'SEMIANNUAL',
+  'YEARLY',
+]
 
 function pad2(n: number) {
   return String(n).padStart(2, '0')
@@ -112,7 +120,7 @@ export function ScheduleView({
   const router = useRouter()
 
   const [selectedDayKey, setSelectedDayKey] = React.useState(() => initialSelectedDayKey ?? todayDayKey)
-  const [viewMode, setViewMode] = React.useState<(typeof VIEW_MODES)[number]>('DAILY')
+  const [viewMode, setViewMode] = React.useState<Frequency>('DAILY')
   const [savingId, setSavingId] = React.useState<string | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = React.useState<string | null>(null)
   const [items, setItems] = React.useState<ScheduleViewItem[]>(monthSchedules)

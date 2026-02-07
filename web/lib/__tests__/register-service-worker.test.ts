@@ -18,7 +18,7 @@ describe('registerServiceWorker', () => {
   })
 
   afterAll(() => {
-    process.env.NODE_ENV = originalNodeEnv
+    ;(process.env as Record<string, string | undefined>).NODE_ENV = originalNodeEnv
   })
 
   it('registers /sw.js with scope / when enabled', async () => {

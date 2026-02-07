@@ -12,8 +12,14 @@ const frequencyStyles: Record<Frequency, string> = {
     'bg-[var(--color-terracotta)]/15 text-[var(--color-terracotta)] border-[var(--color-terracotta)]/30',
   WEEKLY:
     'bg-[var(--color-sage)]/15 text-[var(--color-sage)] border-[var(--color-sage)]/30',
+  BIWEEKLY:
+    'bg-[var(--color-sage)]/10 text-[var(--color-sage)] border-[var(--color-sage)]/20',
   MONTHLY:
     'bg-[var(--color-charcoal)]/10 text-[var(--foreground)] border-[var(--foreground)]/20',
+  BIMONTHLY:
+    'bg-[var(--color-charcoal)]/7 text-[var(--foreground)] border-[var(--foreground)]/15',
+  SEMIANNUAL:
+    'bg-[var(--color-cream)]/70 text-[var(--color-charcoal)] border-[var(--color-charcoal)]/15',
   YEARLY:
     'bg-[var(--color-cream)] text-[var(--color-charcoal)] border-[var(--color-charcoal)]/20',
 }
@@ -21,7 +27,10 @@ const frequencyStyles: Record<Frequency, string> = {
 const frequencyAbbreviations: Record<Frequency, string> = {
   DAILY: 'D',
   WEEKLY: 'W',
+  BIWEEKLY: '2W',
   MONTHLY: 'M',
+  BIMONTHLY: '2M',
+  SEMIANNUAL: 'SA',
   YEARLY: 'Y',
 }
 
