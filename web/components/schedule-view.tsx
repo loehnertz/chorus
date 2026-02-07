@@ -496,11 +496,11 @@ export function ScheduleView({
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-7 gap-0.5 sm:gap-2 text-xs font-[var(--font-display)] text-[var(--foreground)]/50">
+              <div className="grid grid-cols-7 gap-0.5 sm:gap-2 text-xs font-[var(--font-display)] text-[var(--foreground)]/50 text-center">
                 {(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const).map((d, i) => {
                   const short = ['M', 'T', 'W', 'T', 'F', 'S', 'S'][i]
                   return (
-                    <div key={d} className="px-1">
+                    <div key={d} className="px-1 sm:px-2">
                       <span className="sm:hidden">{short}</span>
                       <span className="hidden sm:inline">{d}</span>
                     </div>
