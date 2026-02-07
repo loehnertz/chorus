@@ -103,7 +103,7 @@ export function ChoreCard({
         ) : null}
       </div>
 
-      <h3 className="text-lg font-[var(--font-display)] font-semibold text-[var(--foreground)]">
+      <h3 className="text-lg font-[var(--font-display)] font-semibold text-[var(--foreground)] line-clamp-1">
         {title}
       </h3>
       <p className={cn(

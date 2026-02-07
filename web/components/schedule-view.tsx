@@ -475,14 +475,18 @@ export function ScheduleView({
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-7 gap-2 text-xs font-[var(--font-display)] text-[var(--foreground)]/50">
-                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
-                  <div key={d} className="px-1">
-                    {d}
-                  </div>
-                ))}
+              <div className="grid grid-cols-7 gap-1 sm:gap-2 text-xs font-[var(--font-display)] text-[var(--foreground)]/50">
+                {(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const).map((d, i) => {
+                  const short = ['M', 'T', 'W', 'T', 'F', 'S', 'S'][i]
+                  return (
+                    <div key={d} className="px-1">
+                      <span className="sm:hidden">{short}</span>
+                      <span className="hidden sm:inline">{d}</span>
+                    </div>
+                  )
+                })}
               </div>
-              <div className="mt-3 grid grid-cols-7 gap-2">
+              <div className="mt-3 grid grid-cols-7 gap-1 sm:gap-2">
                 {grid.map((cell) => {
                   const selected = cell.dayKey === selectedDayKey
                   const count = countsByDay[cell.dayKey] ?? 0
@@ -538,7 +542,7 @@ export function ScheduleView({
                         {cell.date.getUTCDate()}
                       </span>
                       {count ? (
-                        <span className="text-[10px] text-[var(--foreground)]/60">{count} {count === 1 ? 'item' : 'items'}</span>
+                        <span className="text-[10px] text-[var(--foreground)]/60">{count}</span>
                       ) : (
                         <span className="text-[10px] text-[var(--foreground)]/40">&nbsp;</span>
                       )}
@@ -634,7 +638,7 @@ export function ScheduleView({
                               {task.chore.title}
                             </p>
                           </div>
-                          <p className="mt-0.5 text-xs text-[var(--foreground)]/50">
+                          <p className="mt-0.5 truncate text-xs text-[var(--foreground)]/50">
                             Slot: {task.slotType.toLowerCase()}
                             {task.suggested ? ' · suggested' : ''}
                             {completer ? ` · completed by ${completer.name ?? 'someone'}` : ''}

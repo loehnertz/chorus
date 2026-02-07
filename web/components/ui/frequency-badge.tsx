@@ -18,17 +18,25 @@ const frequencyStyles: Record<Frequency, string> = {
     'bg-[var(--color-cream)] text-[var(--color-charcoal)] border-[var(--color-charcoal)]/20',
 }
 
+const frequencyAbbreviations: Record<Frequency, string> = {
+  DAILY: 'D',
+  WEEKLY: 'W',
+  MONTHLY: 'M',
+  YEARLY: 'Y',
+}
+
 export function FrequencyBadge({ frequency, className }: FrequencyBadgeProps) {
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-3 py-1 text-xs font-medium',
+        'inline-flex items-center rounded-full px-2 sm:px-3 py-1 text-xs font-medium',
         'font-[var(--font-display)] uppercase tracking-wide border',
         frequencyStyles[frequency],
         className
       )}
     >
-      {frequency}
+      <span className="sm:hidden">{frequencyAbbreviations[frequency]}</span>
+      <span className="hidden sm:inline">{frequency}</span>
     </span>
   )
 }
