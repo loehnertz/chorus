@@ -570,8 +570,9 @@ Touch targets: minimum 44x44px everywhere. Tighter spacing on mobile (`gap-3`, `
    - Empty states show EmptyState component with relevant icon/message
    - Toasts confirm destructive actions and celebrate completions
    - `npm run lint && npm run test && npm run build` passes
-12. Deploy to Vercel production
-13. Write phase summary: `web/docs/PHASE_7_SUMMARY.md`
+12. **Auto-schedule daily chores**: Daily-frequency chores are auto-scheduled on page load via `ensureDailySchedules()` (`lib/auto-schedule.ts`). Uses `@@unique([choreId, scheduledFor])` + `createMany({ skipDuplicates: true })` for idempotency. Called from both dashboard and schedule pages before data fetches. Cascade slot picking remains manual.
+13. Deploy to Vercel production
+14. Write phase summary: `web/docs/PHASE_7_SUMMARY.md`
 
 ## Key Features Implementation Details
 
@@ -740,7 +741,8 @@ npx prisma studio
 ## Future Enhancements (Out of Scope)
 - Push notifications for task reminders
 - Gamification (points, streaks, rewards)
-- Recurring task auto-scheduling
+- Auto-scheduling for non-daily frequencies (weekly/monthly/yearly)
+- "Dismiss" / skip daily chore for a day without completing
 - Integration with calendar apps
 - Photo attachments for completed tasks
 - Analytics dashboard
