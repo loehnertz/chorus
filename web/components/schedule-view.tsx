@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { AlertTriangle, ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react'
 import type { Frequency } from '@/types/frequency'
 import { cn } from '@/lib/utils'
-import { buildMonthGridUtc, getMonthTitleUtc, getTodayDayKeyUtc } from '@/lib/calendar'
+import { buildMonthGridUtc, getMonthTitleUtc } from '@/lib/calendar'
 import { dayKeyUtc, startOfWeekUtc } from '@/lib/date'
 import { getCascadeSourceFrequency } from '@/lib/cascade'
 import { Button } from '@/components/ui/button'
@@ -47,12 +47,13 @@ export interface ScheduleViewProps {
   userId: string
   year: number
   monthIndex: number
+  todayDayKey: string
   initialSelectedDayKey?: string
   chores: ScheduleViewChore[]
   monthSchedules: ScheduleViewItem[]
   upcomingSchedules: ScheduleViewItem[]
   yearlyScheduledChoreIds?: string[]
-  users: Array<{ id: string; name: string | null }>
+  users: Array<{ id: string; name: string | null; image?: string | null }>
   className?: string
 }
 
@@ -99,6 +100,7 @@ export function ScheduleView({
   userId,
   year,
   monthIndex,
+  todayDayKey,
   initialSelectedDayKey,
   chores,
   monthSchedules,
@@ -109,9 +111,7 @@ export function ScheduleView({
 }: ScheduleViewProps) {
   const router = useRouter()
 
-  const [selectedDayKey, setSelectedDayKey] = React.useState(
-    initialSelectedDayKey ?? getTodayDayKeyUtc()
-  )
+  const [selectedDayKey, setSelectedDayKey] = React.useState(() => initialSelectedDayKey ?? todayDayKey)
   const [viewMode, setViewMode] = React.useState<(typeof VIEW_MODES)[number]>('DAILY')
   const [savingId, setSavingId] = React.useState<string | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = React.useState<string | null>(null)
@@ -142,7 +142,7 @@ export function ScheduleView({
   const inMonthKeys = React.useMemo(() => {
     return new Set(grid.filter((c) => c.inMonth).map((c) => c.dayKey))
   }, [grid])
-  const todayKey = React.useMemo(() => getTodayDayKeyUtc(), [])
+  const todayKey = todayDayKey
 
   const countsByDay = React.useMemo(() => {
     const counts: Record<string, number> = {}
@@ -450,7 +450,7 @@ export function ScheduleView({
                   type="button"
                   onClick={prevMonth}
                   className={cn(
-                    'inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)]',
+                    'inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] cursor-pointer',
                     'border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]/70',
                     'hover:bg-[var(--surface-2)]',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-terracotta)] focus-visible:ring-offset-2'
@@ -463,7 +463,7 @@ export function ScheduleView({
                   type="button"
                   onClick={nextMonth}
                   className={cn(
-                    'inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)]',
+                    'inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] cursor-pointer',
                     'border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]/70',
                     'hover:bg-[var(--surface-2)]',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-terracotta)] focus-visible:ring-offset-2'
@@ -532,7 +532,7 @@ export function ScheduleView({
                       className={cn(
                         'relative flex h-12 flex-col items-start justify-between rounded-[var(--radius-md)] border px-2 py-1.5 text-left',
                         cell.inMonth
-                          ? 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-2)]'
+                          ? 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-2)] cursor-pointer'
                           : 'border-transparent bg-transparent opacity-40',
                         selected && 'border-[var(--color-terracotta)] bg-[var(--color-terracotta)]/10',
                         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-terracotta)] focus-visible:ring-offset-2'
@@ -572,10 +572,16 @@ export function ScheduleView({
                       const primaryAssigneeId = u.chore.assigneeIds[0] ?? null
                       const primaryAssignee = primaryAssigneeId ? users.find((usr) => usr.id === primaryAssigneeId) : null
                       return (
-                        <div key={u.id} className={cn('flex items-start justify-between gap-4', isOthers && 'opacity-60')}>
-                          <div className="flex min-w-0 items-start gap-2">
+                        <div key={u.id} className={cn('flex items-center justify-between gap-4', isOthers && 'opacity-60')}>
+                          <div className="flex min-w-0 items-center gap-2">
                             {primaryAssignee && (
-                              <Avatar name={primaryAssignee.name ?? '?'} userId={primaryAssignee.id} size="xs" className="mt-0.5 shrink-0" />
+                              <Avatar
+                                name={primaryAssignee.name ?? '?'}
+                                userId={primaryAssignee.id}
+                                imageUrl={primaryAssignee.image ?? null}
+                                size="xs"
+                                className="mt-0.5 shrink-0"
+                              />
                             )}
                             <div className="min-w-0">
                               <p className="truncate text-sm font-[var(--font-display)] text-[var(--foreground)]">
@@ -625,7 +631,13 @@ export function ScheduleView({
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
                             {primaryAssignee && (
-                              <Avatar name={primaryAssignee.name ?? '?'} userId={primaryAssignee.id} size="xs" className="shrink-0" />
+                              <Avatar
+                                name={primaryAssignee.name ?? '?'}
+                                userId={primaryAssignee.id}
+                                imageUrl={primaryAssignee.image ?? null}
+                                size="xs"
+                                className="shrink-0"
+                              />
                             )}
                             <p
                               className={cn(
@@ -639,7 +651,7 @@ export function ScheduleView({
                             </p>
                           </div>
                           <p className="mt-0.5 truncate text-xs text-[var(--foreground)]/50">
-                            Slot: {task.slotType.toLowerCase()}
+                            Slot: {task.slotType.charAt(0) + task.slotType.slice(1).toLowerCase()}
                             {task.suggested ? ' · suggested' : ''}
                             {completer ? ` · completed by ${completer.name ?? 'someone'}` : ''}
                           </p>
@@ -650,7 +662,7 @@ export function ScheduleView({
                             type="button"
                             onClick={() => requestDeleteSchedule(task.id)}
                             className={cn(
-                              'inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)]',
+                              'inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] cursor-pointer',
                               'text-red-600 hover:bg-red-600/10',
                               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-terracotta)] focus-visible:ring-offset-2'
                             )}
@@ -704,18 +716,18 @@ export function ScheduleView({
                     )}
                     onClick={() => setViewMode(mode)}
                   >
-                    {mode.toLowerCase()}
+                    {mode.charAt(0) + mode.slice(1).toLowerCase()}
                   </button>
                 ))}
               </div>
 
               <div className="space-y-2">
                 <p className="text-xs uppercase tracking-wide font-[var(--font-display)] text-[var(--foreground)]/50">
-                  {viewMode.toLowerCase()} chores
+                  {viewMode.charAt(0) + viewMode.slice(1).toLowerCase()} chores
                 </p>
                 {planChores.length === 0 ? (
                   <p className="text-sm text-[var(--foreground)]/50">
-                    No {viewMode.toLowerCase()} chores yet.
+                    No {viewMode.toLowerCase()} chores yet
                   </p>
                 ) : (
                   <div className="space-y-2">

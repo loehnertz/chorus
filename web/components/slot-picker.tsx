@@ -147,7 +147,7 @@ export function SlotPicker({
             Cascade pick
           </p>
           <p className="mt-1 text-sm font-[var(--font-display)] font-medium text-[var(--foreground)]">
-            Pull 1 {sourceFrequency.toLowerCase()} chore into this {slotType.toLowerCase()} slot
+            Pull 1 {sourceFrequency.charAt(0) + sourceFrequency.slice(1).toLowerCase()} chore into this {slotType.charAt(0) + slotType.slice(1).toLowerCase()} slot
           </p>
         </div>
 
@@ -178,10 +178,10 @@ export function SlotPicker({
         </div>
       ) : null}
 
-      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div className="mt-4 grid grid-cols-1 gap-2">
         {sourceChores.length === 0 ? (
           <div className="col-span-full rounded-[var(--radius-md)] border border-dashed border-[var(--border)] p-4">
-            <p className="text-sm text-[var(--foreground)]/60">No {sourceFrequency.toLowerCase()} chores available.</p>
+            <p className="text-sm text-[var(--foreground)]/60">No {sourceFrequency.toLowerCase()} chores available</p>
           </div>
         ) : (
           sourceChores
@@ -205,8 +205,8 @@ export function SlotPicker({
                     disabled
                       ? 'cursor-not-allowed opacity-60 border-[var(--border)]'
                       : selected
-                        ? 'border-[var(--color-terracotta)] bg-[var(--color-terracotta)]/10'
-                        : 'border-[var(--border)] hover:bg-[var(--surface-2)]'
+                        ? 'border-[var(--color-terracotta)] bg-[var(--color-terracotta)]/10 cursor-pointer'
+                        : 'border-[var(--border)] hover:bg-[var(--surface-2)] cursor-pointer'
                   )}
                   aria-pressed={selected}
                   aria-disabled={disabled || undefined}

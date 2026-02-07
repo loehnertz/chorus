@@ -14,7 +14,7 @@ import { ChoreCard } from '@/components/chore-card'
 import { ChoreForm } from '@/components/chore-form'
 import { PageFadeIn } from '@/components/page-fade-in'
 
-export type ChoresViewUser = { id: string; name: string }
+export type ChoresViewUser = { id: string; name: string; image?: string | null }
 
 export type ChoresViewChore = {
   id: string
@@ -22,7 +22,7 @@ export type ChoresViewChore = {
   description?: string | null
   frequency: Frequency
   completionCount: number
-  assignees: { id: string; name: string }[]
+  assignees: { id: string; name: string; image?: string | null }[]
 }
 
 export interface ChoresViewProps {
@@ -126,7 +126,7 @@ export function ChoresView({ chores, users }: ChoresViewProps) {
             )}
             onClick={() => setFilter(f)}
           >
-            {f.toLowerCase()}
+            {f.charAt(0) + f.slice(1).toLowerCase()}
           </button>
         ))}
       </div>

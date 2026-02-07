@@ -41,8 +41,8 @@ describe('HistoryView', () => {
 
     expect(screen.getByText('Vacuum')).toBeInTheDocument()
     expect(screen.getByText('Dishes')).toBeInTheDocument()
-    expect(screen.getByText(/You - 2026-02-07 12:00 - scheduled/)).toBeInTheDocument()
-    expect(screen.getByText(/Bob - 2026-02-07 12:05/)).toBeInTheDocument()
+    expect(screen.getByText(/You .*2026-02-07 12:00.*scheduled/)).toBeInTheDocument()
+    expect(screen.getByText(/Bob .*2026-02-07 12:05/)).toBeInTheDocument()
     expect(screen.getByText('Kitchen only')).toBeInTheDocument()
   })
 })

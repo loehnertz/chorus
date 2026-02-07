@@ -9,7 +9,7 @@ import { Avatar } from '@/components/ui/avatar'
 import { authClient } from '@/lib/auth/client'
 
 export interface SidebarProps {
-  user: { id: string; name: string }
+  user: { id: string; name: string; image?: string | null }
   className?: string
 }
 
@@ -53,7 +53,7 @@ export function Sidebar({ user, className }: SidebarProps) {
                 href={item.href}
                 prefetch={false}
                 className={cn(
-                  'flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5',
+                  'flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 cursor-pointer',
                   'text-sm font-[var(--font-display)] font-medium transition-colors duration-150',
                   active
                     ? 'bg-[var(--surface-2)] text-[var(--foreground)]'
@@ -76,7 +76,7 @@ export function Sidebar({ user, className }: SidebarProps) {
 
         <div className="mt-auto pt-5 border-t border-[var(--border)]">
           <div className="flex items-center gap-3 px-3 py-2">
-            <Avatar name={user.name} userId={user.id} size="sm" />
+            <Avatar name={user.name} userId={user.id} imageUrl={user.image ?? null} size="sm" />
             <div className="min-w-0">
               <p className="truncate text-sm font-[var(--font-display)] font-medium text-[var(--foreground)]">
                 {user.name}
@@ -85,7 +85,7 @@ export function Sidebar({ user, className }: SidebarProps) {
                 type="button"
                 onClick={handleSignOut}
                 className={cn(
-                  'mt-0.5 inline-flex items-center gap-1 text-xs',
+                  'mt-0.5 inline-flex items-center gap-1 text-xs cursor-pointer',
                   'text-[var(--foreground)]/50 hover:text-[var(--color-terracotta)]',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-terracotta)] focus-visible:ring-offset-2 rounded'
                 )}

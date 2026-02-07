@@ -53,6 +53,7 @@ describe('ScheduleView', () => {
         userId="u1"
         year={2026}
         monthIndex={1}
+        todayDayKey="2026-02-06"
         initialSelectedDayKey="2026-02-06"
         chores={[
           { id: 'c1', title: 'Daily', frequency: 'DAILY', assigneeIds: [] },
@@ -109,6 +110,7 @@ describe('ScheduleView', () => {
         userId="u1"
         year={2026}
         monthIndex={1}
+        todayDayKey="2026-02-06"
         initialSelectedDayKey="2026-02-06"
         chores={[{ id: 'c1', title: 'Wash windows', frequency: 'DAILY', assigneeIds: [] }]}
         monthSchedules={[]}
@@ -141,6 +143,7 @@ describe('ScheduleView', () => {
         userId="u1"
         year={2026}
         monthIndex={1}
+        todayDayKey="2026-02-06"
         initialSelectedDayKey="2026-02-06"
         chores={[{ id: 'c1', title: 'Wash windows', frequency: 'DAILY', assigneeIds: [] }]}
         monthSchedules={[
@@ -179,6 +182,7 @@ describe('ScheduleView', () => {
         userId="u1"
         year={2026}
         monthIndex={1}
+        todayDayKey="2026-02-06"
         initialSelectedDayKey="2026-02-06"
         chores={[
           { id: 'c1', title: 'My chore', frequency: 'DAILY', assigneeIds: ['u1'] },
@@ -234,6 +238,7 @@ describe('ScheduleView', () => {
         userId="u1"
         year={2026}
         monthIndex={1}
+        todayDayKey="2026-02-06"
         initialSelectedDayKey="2026-02-06"
         chores={[
           { id: 'c1', title: 'My upcoming', frequency: 'DAILY', assigneeIds: ['u1'] },
@@ -283,6 +288,7 @@ describe('ScheduleView', () => {
         userId="u1"
         year={2026}
         monthIndex={1}
+        todayDayKey="2026-02-06"
         initialSelectedDayKey="2026-02-06"
         chores={[
           { id: 'c1', title: 'Shared chore', frequency: 'DAILY', assigneeIds: ['u1'] },

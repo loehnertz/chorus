@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-export type ChoreCardAssignee = { id: string; name: string }
+export type ChoreCardAssignee = { id: string; name: string; image?: string | null }
 
 export interface ChoreCardProps {
   title: string
@@ -74,7 +74,7 @@ export function ChoreCard({
               <button
                 type="button"
                 className={cn(
-                  'inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)]',
+                  'inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] cursor-pointer',
                   'text-[var(--foreground)]/60 hover:bg-[var(--surface-2)] hover:text-[var(--foreground)]',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-terracotta)] focus-visible:ring-offset-2'
                 )}
@@ -119,11 +119,22 @@ export function ChoreCard({
           {assignees.length ? (
             <div className="flex -space-x-1.5">
               {assignees.slice(0, 4).map((u) => (
-                <Avatar key={u.id} name={u.name} userId={u.id} size="sm" className="ring-2 ring-white" />
+                <Avatar
+                  key={u.id}
+                  name={u.name}
+                  userId={u.id}
+                  imageUrl={u.image ?? null}
+                  size="sm"
+                  className="ring-2 ring-white"
+                />
               ))}
             </div>
           ) : (
-            <span className="text-[var(--foreground)]/50">Unassigned</span>
+            /* Invisible avatar-sized spacer keeps the row the same height as when avatars are present */
+            <div className="flex items-center">
+              <div className="h-7 w-0 shrink-0" aria-hidden="true" />
+              <span className="text-[var(--foreground)]/50">Unassigned</span>
+            </div>
           )}
         </div>
 

@@ -10,21 +10,25 @@ export default async function ChoresPage() {
   const [chores, users] = await Promise.all([
     db.chore.findMany({
       include: {
-        assignments: { include: { user: { select: { id: true, name: true } } } },
+        assignments: { include: { user: { select: { id: true, name: true, image: true } } } },
         _count: { select: { completions: true } },
       },
       orderBy: { createdAt: 'desc' },
     }),
     db.user.findMany({
       where: { approved: true },
-      select: { id: true, name: true },
+      select: { id: true, name: true, image: true },
       orderBy: { createdAt: 'asc' },
     }),
   ])
 
   return (
     <ChoresView
-      users={users.map((u) => ({ id: u.id, name: u.name?.trim() || 'Unknown' }))}
+      users={users.map((u) => ({
+        id: u.id,
+        name: u.name?.trim() || 'Unknown',
+        image: u.image,
+      }))}
       chores={chores.map((c) => ({
         id: c.id,
         title: c.title,
@@ -35,6 +39,7 @@ export default async function ChoresPage() {
           .map((a) => ({
             id: a.user.id,
             name: a.user.name?.trim() || 'Unknown',
+            image: a.user.image,
           }))
           .sort((a, b) => a.name.localeCompare(b.name)),
       }))}

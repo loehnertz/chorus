@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 export interface AvatarProps {
   name: string
   userId: string
+  imageUrl?: string | null
   size?: 'xs' | 'sm' | 'md' | 'lg'
   className?: string
 }
@@ -29,22 +30,35 @@ const sizeClasses = {
   lg: 'h-12 w-12 text-base',
 } as const
 
-export function Avatar({ name, userId, size = 'md', className }: AvatarProps) {
+export function Avatar({ name, userId, imageUrl, size = 'md', className }: AvatarProps) {
   const initial = (name?.trim()?.[0] ?? '?').toUpperCase()
   const colorClass = backgroundClasses[hashStringToIndex(userId, backgroundClasses.length)]
 
+  const baseClassName = cn(
+    'inline-flex items-center justify-center rounded-full font-[var(--font-display)] font-semibold text-white overflow-hidden',
+    sizeClasses[size],
+    colorClass,
+    className
+  )
+
+  // If an image URL is provided, use it. Otherwise fall back to the colored initial.
+  if (!imageUrl) {
+    return (
+      <div className={baseClassName} aria-label={name} title={name}>
+        {initial}
+      </div>
+    )
+  }
+
   return (
-    <div
-      className={cn(
-        'inline-flex items-center justify-center rounded-full font-[var(--font-display)] font-semibold text-white',
-        sizeClasses[size],
-        colorClass,
-        className
-      )}
-      aria-label={name}
-      title={name}
-    >
-      {initial}
+    <div className={baseClassName} aria-label={name} title={name}>
+      <img
+        src={imageUrl}
+        alt={name}
+        className="h-full w-full object-cover"
+        loading="lazy"
+        decoding="async"
+      />
     </div>
   )
 }

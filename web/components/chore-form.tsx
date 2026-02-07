@@ -28,7 +28,7 @@ import {
 import { Avatar } from '@/components/ui/avatar'
 import { FrequencyBadge } from '@/components/ui/frequency-badge'
 
-export type ChoreFormUser = { id: string; name: string }
+export type ChoreFormUser = { id: string; name: string; image?: string | null }
 
 export type ChoreFormInitialValues = {
   id: string
@@ -273,7 +273,7 @@ export function ChoreForm({ open, onOpenChange, users, initialValues, onSaved }:
                           aria-label={`Assign to ${u.name}`}
                           disabled={saving}
                         />
-                        <Avatar name={u.name} userId={u.id} size="sm" />
+                        <Avatar name={u.name} userId={u.id} imageUrl={u.image ?? null} size="sm" />
                         <span className="text-sm font-[var(--font-display)] text-[var(--foreground)]">
                           {u.name}
                         </span>

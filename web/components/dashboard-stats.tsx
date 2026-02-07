@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
 export type DashboardStatsData = {
@@ -17,14 +18,16 @@ function StatCard({
   value,
   sub,
   subTone = 'neutral',
+  href,
 }: {
   label: string
   value: number
   sub?: string
   subTone?: 'neutral' | 'positive'
+  href?: string
 }) {
-  return (
-    <div className="bg-[var(--surface)] rounded-[var(--radius-md)] p-4 sm:p-5 shadow-[var(--shadow-soft)] border border-[var(--border)]">
+  const content = (
+    <>
       <p className="text-xs uppercase tracking-wide font-[var(--font-display)] text-[var(--foreground)]/50">
         {label}
       </p>
@@ -43,8 +46,23 @@ function StatCard({
           {sub}
         </p>
       ) : null}
-    </div>
+    </>
   )
+
+  const cardClass = cn(
+    'bg-[var(--surface)] rounded-[var(--radius-md)] p-4 sm:p-5 shadow-[var(--shadow-soft)] border border-[var(--border)]',
+    href && 'cursor-pointer hover:shadow-[var(--shadow-lifted)] hover:-translate-y-0.5 transition-all duration-200'
+  )
+
+  if (href) {
+    return (
+      <Link href={href} prefetch={false} className={cardClass}>
+        {content}
+      </Link>
+    )
+  }
+
+  return <div className={cardClass}>{content}</div>
 }
 
 export function DashboardStats({ stats, className }: DashboardStatsProps) {
@@ -63,7 +81,7 @@ export function DashboardStats({ stats, className }: DashboardStatsProps) {
         sub={stats.streakDays > 0 ? 'consecutive days' : 'start today'}
         subTone={stats.streakDays > 0 ? 'positive' : 'neutral'}
       />
-      <StatCard label="Chores" value={stats.choresCount} sub="in the pool" />
+      <StatCard label="Chores" value={stats.choresCount} sub="in the pool" href="/chores" />
     </div>
   )
 }

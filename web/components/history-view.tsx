@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { FrequencyBadge } from '@/components/ui/frequency-badge'
+import { Avatar } from '@/components/ui/avatar'
 
 export type HistoryItem = {
   id: string
@@ -18,7 +19,7 @@ export type HistoryItem = {
   completedAtLabel: string
   scheduleId: string | null
   notes: string | null
-  user: { id: string; name: string }
+  user: { id: string; name: string; image?: string | null }
 }
 
 export interface HistoryViewProps {
@@ -101,20 +102,29 @@ export function HistoryView({ currentUserId, scope, items, className }: HistoryV
                     variants={rowVariants}
                     className="flex items-start justify-between gap-4"
                   >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-[var(--font-display)] text-[var(--foreground)]">
-                        {item.title}
-                      </p>
-                      <p className="mt-0.5 text-xs text-[var(--foreground)]/50">
-                        {scope === 'household' ? `${isMe ? 'You' : item.user.name} - ` : ''}
-                        {item.completedAtLabel}
-                        {item.scheduleId ? ' - scheduled' : ''}
-                      </p>
-                      {item.notes?.trim() ? (
-                        <p className="mt-1 text-xs text-[var(--foreground)]/60 line-clamp-2">
-                          {item.notes}
+                    <div className="flex min-w-0 items-start gap-2">
+                      <Avatar
+                        name={item.user.name}
+                        userId={item.user.id}
+                        imageUrl={item.user.image ?? null}
+                        size="xs"
+                        className="mt-0.5 shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-[var(--font-display)] text-[var(--foreground)]">
+                          {item.title}
                         </p>
-                      ) : null}
+                        <p className="mt-0.5 text-xs text-[var(--foreground)]/50">
+                          {scope === 'household' ? `${isMe ? 'You' : item.user.name} · ` : ''}
+                          {item.completedAtLabel}
+                          {item.scheduleId ? ' · scheduled' : ''}
+                        </p>
+                        {item.notes?.trim() ? (
+                          <p className="mt-1 text-xs text-[var(--foreground)]/60 line-clamp-2">
+                            {item.notes}
+                          </p>
+                        ) : null}
+                      </div>
                     </div>
                     <FrequencyBadge frequency={item.frequency} />
                   </motion.div>

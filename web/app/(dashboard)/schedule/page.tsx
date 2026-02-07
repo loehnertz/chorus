@@ -2,6 +2,7 @@ import { unstable_noStore as noStore } from 'next/cache'
 import { requireApprovedUser } from '@/lib/auth/require-approval'
 import { db } from '@/lib/db'
 import { startOfTodayUtc } from '@/lib/date'
+import { getTodayDayKeyUtc } from '@/lib/calendar'
 import { ScheduleView } from '@/components/schedule-view'
 import { ensureDailySchedules } from '@/lib/auto-schedule'
 
@@ -38,12 +39,13 @@ export default async function SchedulePage({
   const dayRaw = Array.isArray(sp.day) ? sp.day[0] : sp.day
 
   const now = new Date()
+  const todayDayKey = getTodayDayKeyUtc(now)
 
   const parsedMonth = parseMonthParam(monthRaw)
   const year = parsedMonth?.year ?? now.getUTCFullYear()
   const monthIndex = parsedMonth?.monthIndex ?? now.getUTCMonth()
 
-  const initialSelectedDayKey = parseDayParam(dayRaw)
+  const initialSelectedDayKey = parseDayParam(dayRaw) ?? todayDayKey
 
   const monthStart = new Date(Date.UTC(year, monthIndex, 1))
 
@@ -117,7 +119,7 @@ export default async function SchedulePage({
     }),
     db.user.findMany({
       where: { approved: true },
-      select: { id: true, name: true },
+      select: { id: true, name: true, image: true },
     }),
   ])
 
@@ -150,7 +152,8 @@ export default async function SchedulePage({
       userId={userId}
       year={year}
       monthIndex={monthIndex}
-      initialSelectedDayKey={initialSelectedDayKey ?? undefined}
+      todayDayKey={todayDayKey}
+      initialSelectedDayKey={initialSelectedDayKey}
       chores={mappedChores}
       monthSchedules={monthSchedulesRaw.map(mapSchedule)}
       upcomingSchedules={upcomingRaw.map(mapSchedule)}

@@ -59,7 +59,7 @@ export default async function DashboardPage() {
       orderBy: { completedAt: 'desc' },
       include: {
         chore: { select: { title: true, frequency: true } },
-        user: { select: { name: true } },
+        user: { select: { id: true, name: true, image: true } },
       },
     }),
   ])
@@ -83,7 +83,9 @@ export default async function DashboardPage() {
     id: c.id,
     title: c.chore.title,
     frequency: c.chore.frequency,
+    userId: c.user.id,
     userName: c.user.name?.trim() || 'Someone',
+    userImage: c.user.image,
     completedAtLabel: c.completedAt.toISOString().slice(0, 16).replace('T', ' '),
   }))
 

@@ -23,7 +23,7 @@ export async function syncUser(neonUser: NeonAuthUser, approved?: boolean) {
       where: { id: neonUser.id },
       update: {
         name: neonUser.name || null,
-        image: neonUser.image || null,
+        ...(neonUser.image ? { image: neonUser.image } : {}),
         ...(approved !== undefined && { approved }),
       },
       create: {

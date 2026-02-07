@@ -5,12 +5,15 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { DashboardStats, type DashboardStatsData } from '@/components/dashboard-stats'
 import { TodaysTasks, type TodaysTask } from '@/components/todays-tasks'
 import { FrequencyBadge } from '@/components/ui/frequency-badge'
+import { Avatar } from '@/components/ui/avatar'
 
 export type RecentActivityItem = {
   id: string
   title: string
   frequency: Frequency
+  userId: string
   userName: string
+  userImage?: string | null
   completedAtLabel: string
 }
 
@@ -53,13 +56,22 @@ export function DashboardView({ stats, todaysTasks, recentActivity }: DashboardV
             <div className="space-y-3">
               {recentActivity.map((item) => (
                 <div key={item.id} className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-[var(--font-display)] text-[var(--foreground)]">
-                      {item.title}
-                    </p>
-                    <p className="mt-0.5 text-xs text-[var(--foreground)]/50">
-                      {item.userName} · {item.completedAtLabel}
-                    </p>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Avatar
+                      name={item.userName}
+                      userId={item.userId}
+                      imageUrl={item.userImage ?? null}
+                      size="xs"
+                      className="mt-0.5 shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-[var(--font-display)] text-[var(--foreground)]">
+                        {item.title}
+                      </p>
+                      <p className="mt-0.5 text-xs text-[var(--foreground)]/50">
+                        {item.userName} · {item.completedAtLabel}
+                      </p>
+                    </div>
                   </div>
                   <FrequencyBadge frequency={item.frequency} />
                 </div>

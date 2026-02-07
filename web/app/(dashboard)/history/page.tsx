@@ -30,7 +30,7 @@ export default async function HistoryPage({
     orderBy: { completedAt: 'desc' },
     include: {
       chore: { select: { title: true, frequency: true } },
-      user: { select: { id: true, name: true } },
+      user: { select: { id: true, name: true, image: true } },
     },
   })
 
@@ -47,6 +47,7 @@ export default async function HistoryPage({
         user: {
           id: c.user.id,
           name: c.user.name?.trim() || 'Someone',
+          image: c.user.image,
         },
         completedAtLabel: c.completedAt.toISOString().slice(0, 16).replace('T', ' '),
       }))}

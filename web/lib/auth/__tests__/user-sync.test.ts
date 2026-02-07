@@ -102,7 +102,6 @@ describe('syncUser', () => {
         where: { id: userWithNulls.id },
         update: {
           name: null,
-          image: null,
         },
         create: {
           id: userWithNulls.id,

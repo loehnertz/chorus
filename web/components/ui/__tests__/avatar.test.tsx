@@ -7,6 +7,12 @@ describe('Avatar', () => {
     expect(screen.getByText('A')).toBeInTheDocument()
   })
 
+  it('renders an image when imageUrl is provided', () => {
+    render(<Avatar name="Alice" userId="user-1" imageUrl="https://example.com/avatar.jpg" />)
+    expect(screen.getByRole('img', { name: 'Alice' })).toBeInTheDocument()
+    expect(screen.queryByText('A')).not.toBeInTheDocument()
+  })
+
   it('renders at xs size', () => {
     render(<Avatar name="Bob" userId="user-2" size="xs" />)
     const el = screen.getByLabelText('Bob')
