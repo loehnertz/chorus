@@ -38,9 +38,9 @@ export async function POST(request: Request) {
         );
       }
 
-      // Idempotency: a user can only complete a given schedule once.
-      const existing = await db.choreCompletion.findFirst({
-        where: { userId: session.user.id, scheduleId },
+      // Idempotency: a schedule can only be completed once for the household.
+      const existing = await db.choreCompletion.findUnique({
+        where: { scheduleId },
         include: {
           chore: { select: { id: true, title: true, frequency: true } },
           user: { select: { id: true, name: true, image: true } },

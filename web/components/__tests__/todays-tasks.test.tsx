@@ -37,6 +37,7 @@ describe('TodaysTasks', () => {
 
     render(
       <TodaysTasks
+        userId="u1"
         tasks={[
           {
             scheduleId: 's1',
@@ -67,6 +68,7 @@ describe('TodaysTasks', () => {
 
     render(
       <TodaysTasks
+        userId="u1"
         tasks={[
           {
             scheduleId: 's1',
@@ -93,6 +95,7 @@ describe('TodaysTasks', () => {
 
     render(
       <TodaysTasks
+        userId="u1"
         tasks={[
           {
             scheduleId: 's1',
@@ -100,6 +103,7 @@ describe('TodaysTasks', () => {
             title: 'Dishes',
             frequency: 'DAILY',
             completed: true,
+            completedByUserId: 'u1',
           },
         ]}
       />
@@ -120,6 +124,7 @@ describe('TodaysTasks', () => {
 
     render(
       <TodaysTasks
+        userId="u1"
         tasks={[
           {
             scheduleId: 's1',
@@ -127,6 +132,7 @@ describe('TodaysTasks', () => {
             title: 'Dishes',
             frequency: 'DAILY',
             completed: true,
+            completedByUserId: 'u1',
           },
         ]}
       />
@@ -136,6 +142,36 @@ describe('TodaysTasks', () => {
 
     await waitFor(() => expect(toastError).toHaveBeenCalled())
     expect(toastError).toHaveBeenCalledWith('Failed to undo completion')
+    expect(mockRefresh).not.toHaveBeenCalled()
+  })
+
+  it("does not allow undoing someone else's completion", async () => {
+    const user = userEvent.setup()
+
+    ;(global.fetch as jest.Mock).mockResolvedValue({ ok: true })
+
+    render(
+      <TodaysTasks
+        userId="u1"
+        tasks={[
+          {
+            scheduleId: 's1',
+            choreId: 'c1',
+            title: 'Dishes',
+            frequency: 'DAILY',
+            completed: true,
+            completedByUserId: 'u2',
+          },
+        ]}
+      />
+    )
+
+    const checkbox = screen.getByRole('checkbox')
+    expect(checkbox).toBeChecked()
+
+    await user.click(checkbox)
+
+    expect(global.fetch).not.toHaveBeenCalled()
     expect(mockRefresh).not.toHaveBeenCalled()
   })
 })

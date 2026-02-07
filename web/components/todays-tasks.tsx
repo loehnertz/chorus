@@ -14,36 +14,52 @@ export type TodaysTask = {
   title: string
   frequency: Frequency
   completed: boolean
+  completedByUserId?: string | null
 }
 
 export interface TodaysTasksProps {
+  userId: string
   tasks: TodaysTask[]
   className?: string
 }
 
-export function TodaysTasks({ tasks, className }: TodaysTasksProps) {
+export function TodaysTasks({ userId, tasks, className }: TodaysTasksProps) {
   const router = useRouter()
   const [savingId, setSavingId] = React.useState<string | null>(null)
-  const [completedIds, setCompletedIds] = React.useState<Set<string>>(
-    () => new Set(tasks.filter((t) => t.completed).map((t) => t.scheduleId))
-  )
+  const [completionById, setCompletionById] = React.useState<Record<string, string | null>>(() => {
+    const next: Record<string, string | null> = {}
+    for (const t of tasks) {
+      if (!t.completed) continue
+      next[t.scheduleId] = t.completedByUserId ?? null
+    }
+    return next
+  })
 
   React.useEffect(() => {
-    setCompletedIds(new Set(tasks.filter((t) => t.completed).map((t) => t.scheduleId)))
+    const next: Record<string, string | null> = {}
+    for (const t of tasks) {
+      if (!t.completed) continue
+      next[t.scheduleId] = t.completedByUserId ?? null
+    }
+    setCompletionById(next)
   }, [tasks])
 
   const setCompletion = async (task: TodaysTask, nextChecked: boolean) => {
     if (savingId) return
 
     const scheduleId = task.scheduleId
-    const wasChecked = completedIds.has(scheduleId)
+    const wasChecked = Object.prototype.hasOwnProperty.call(completionById, scheduleId)
+    const prevCompletedByUserId = wasChecked ? (completionById[scheduleId] ?? null) : null
     if (wasChecked === nextChecked) return
 
+    const canUndo = wasChecked && prevCompletedByUserId === userId
+    if (!nextChecked && !canUndo) return
+
     setSavingId(scheduleId)
-    setCompletedIds((prev) => {
-      const next = new Set(prev)
-      if (nextChecked) next.add(scheduleId)
-      else next.delete(scheduleId)
+    setCompletionById((prev) => {
+      const next = { ...prev }
+      if (nextChecked) next[scheduleId] = userId
+      else delete next[scheduleId]
       return next
     })
 
@@ -59,10 +75,10 @@ export function TodaysTasks({ tasks, className }: TodaysTasksProps) {
           })
 
       if (!res.ok) {
-        setCompletedIds((prev) => {
-          const next = new Set(prev)
-          if (wasChecked) next.add(scheduleId)
-          else next.delete(scheduleId)
+        setCompletionById((prev) => {
+          const next = { ...prev }
+          if (wasChecked) next[scheduleId] = prevCompletedByUserId
+          else delete next[scheduleId]
           return next
         })
         toast.error(nextChecked ? 'Failed to record completion' : 'Failed to undo completion')
@@ -74,10 +90,10 @@ export function TodaysTasks({ tasks, className }: TodaysTasksProps) {
 
       router.refresh()
     } catch {
-      setCompletedIds((prev) => {
-        const next = new Set(prev)
-        if (wasChecked) next.add(scheduleId)
-        else next.delete(scheduleId)
+      setCompletionById((prev) => {
+        const next = { ...prev }
+        if (wasChecked) next[scheduleId] = prevCompletedByUserId
+        else delete next[scheduleId]
         return next
       })
       toast.error(nextChecked ? 'Failed to record completion' : 'Failed to undo completion')
@@ -89,8 +105,10 @@ export function TodaysTasks({ tasks, className }: TodaysTasksProps) {
   return (
     <div className={cn('divide-y divide-[var(--border)]', className)}>
       {tasks.map((task) => {
-        const checked = completedIds.has(task.scheduleId)
-        const disabled = savingId === task.scheduleId
+        const completedBy = completionById[task.scheduleId] ?? null
+        const checked = Object.prototype.hasOwnProperty.call(completionById, task.scheduleId)
+        const canUndo = checked && completedBy === userId
+        const disabled = savingId === task.scheduleId || (checked && !canUndo)
         return (
           <div key={task.scheduleId} className="flex items-center gap-4 py-4 sm:py-5">
             <CompletionCheckbox

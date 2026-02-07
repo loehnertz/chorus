@@ -50,7 +50,7 @@ export default async function DashboardPage() {
             assignments: { select: { userId: true } },
           },
         },
-        completions: { where: { userId }, select: { id: true } },
+        completion: { select: { id: true, userId: true } },
       },
       orderBy: { scheduledFor: 'asc' },
     }),
@@ -76,7 +76,8 @@ export default async function DashboardPage() {
       choreId: s.chore.id,
       title: s.chore.title,
       frequency: s.chore.frequency,
-      completed: s.completions.length > 0,
+      completed: !!s.completion,
+      completedByUserId: s.completion?.userId ?? null,
     }))
 
   const recentActivity = recent.map((c) => ({
@@ -92,6 +93,7 @@ export default async function DashboardPage() {
   return (
     <PageFadeIn>
       <DashboardView
+        userId={userId}
         stats={{
           choresCount,
           completedTotal,

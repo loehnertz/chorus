@@ -15,7 +15,7 @@ jest.mock('@/lib/db', () => ({
       findUnique: jest.fn(),
     },
     choreCompletion: {
-      findFirst: jest.fn(),
+      findUnique: jest.fn(),
       create: jest.fn(),
       deleteMany: jest.fn(),
       findMany: jest.fn(),
@@ -180,7 +180,35 @@ describe('POST /api/completions', () => {
       chore: { id: 'chore-1', title: 'Dishes', frequency: 'DAILY' },
       user: { id: 'test-user-id', name: 'Test User', image: null },
     };
-    (db.choreCompletion.findFirst as jest.Mock).mockResolvedValue(existing);
+    (db.choreCompletion.findUnique as jest.Mock).mockResolvedValue(existing);
+
+    const request = createMockRequest('/api/completions', {
+      method: 'POST',
+      body: { choreId: 'chore-1', scheduleId: 'sched-1' },
+    });
+    const response = await POST(request as never);
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual(existing);
+    expect(db.choreCompletion.create).not.toHaveBeenCalled();
+  });
+
+  it('should be idempotent when schedule already completed by another user', async () => {
+    const session = createMockSession({ userId: 'u1' });
+    (requireApprovedUserApi as jest.Mock).mockResolvedValue(session);
+    (db.chore.findUnique as jest.Mock).mockResolvedValue({ id: 'chore-1' });
+    (db.schedule.findUnique as jest.Mock).mockResolvedValue({ id: 'sched-1', choreId: 'chore-1' });
+
+    const existing = {
+      id: 'comp-1',
+      choreId: 'chore-1',
+      scheduleId: 'sched-1',
+      notes: null,
+      userId: 'u2',
+      chore: { id: 'chore-1', title: 'Dishes', frequency: 'DAILY' },
+      user: { id: 'u2', name: 'Other User', image: null },
+    };
+    (db.choreCompletion.findUnique as jest.Mock).mockResolvedValue(existing);
 
     const request = createMockRequest('/api/completions', {
       method: 'POST',

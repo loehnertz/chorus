@@ -89,10 +89,8 @@ export default async function SchedulePage({
             assignments: { select: { userId: true } },
           },
         },
-        completions: {
+        completion: {
           select: { id: true, userId: true, completedAt: true },
-          orderBy: { completedAt: 'desc' },
-          take: 1,
         },
       },
       orderBy: { scheduledFor: 'asc' },
@@ -109,10 +107,8 @@ export default async function SchedulePage({
             assignments: { select: { userId: true } },
           },
         },
-        completions: {
+        completion: {
           select: { id: true, userId: true, completedAt: true },
-          orderBy: { completedAt: 'desc' },
-          take: 1,
         },
       },
       orderBy: { scheduledFor: 'asc' },
@@ -144,8 +140,8 @@ export default async function SchedulePage({
     scheduledFor: s.scheduledFor.toISOString(),
     slotType: s.slotType,
     suggested: s.suggested,
-    completed: s.completions.length > 0,
-    completedByUserId: s.completions[0]?.userId ?? null,
+    completed: !!s.completion,
+    completedByUserId: s.completion?.userId ?? null,
     chore: {
       id: s.chore.id,
       title: s.chore.title,

@@ -5,6 +5,7 @@ describe('DashboardView', () => {
   it('shows an empty state for no tasks', () => {
     render(
       <DashboardView
+        userId="u1"
         stats={{ completedTotal: 0, completedThisWeek: 0, streakDays: 0, choresCount: 0 }}
         todaysTasks={[]}
         recentActivity={[]}

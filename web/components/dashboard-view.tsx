@@ -18,12 +18,13 @@ export type RecentActivityItem = {
 }
 
 export interface DashboardViewProps {
+  userId: string
   stats: DashboardStatsData
   todaysTasks: TodaysTask[]
   recentActivity: RecentActivityItem[]
 }
 
-export function DashboardView({ stats, todaysTasks, recentActivity }: DashboardViewProps) {
+export function DashboardView({ userId, stats, todaysTasks, recentActivity }: DashboardViewProps) {
   return (
     <div className="space-y-7 md:space-y-8">
       <DashboardStats stats={stats} />
@@ -40,7 +41,7 @@ export function DashboardView({ stats, todaysTasks, recentActivity }: DashboardV
               subtitle="No tasks scheduled for today"
             />
           ) : (
-            <TodaysTasks tasks={todaysTasks} />
+            <TodaysTasks userId={userId} tasks={todaysTasks} />
           )}
         </CardContent>
       </Card>

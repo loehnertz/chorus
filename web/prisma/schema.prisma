@@ -62,7 +62,7 @@ model Schedule {
   slotType     Frequency // What kind of slot (WEEKLY, MONTHLY, etc)
   suggested    Boolean   @default(true) // Was this auto-suggested or manually selected
 
-  completions ChoreCompletion[]
+  completion ChoreCompletion?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -76,7 +76,7 @@ model ChoreCompletion {
   choreId    String
   chore      Chore     @relation(fields: [choreId], references: [id], onDelete: Cascade)
 
-  scheduleId String?
+  scheduleId String?   @unique
   schedule   Schedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
 
   userId      String
