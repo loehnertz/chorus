@@ -38,7 +38,6 @@ export default async function SchedulePage({
   const dayRaw = Array.isArray(sp.day) ? sp.day[0] : sp.day
 
   const now = new Date()
-  await ensureDailySchedules(now)
 
   const parsedMonth = parseMonthParam(monthRaw)
   const year = parsedMonth?.year ?? now.getUTCFullYear()
@@ -55,6 +54,8 @@ export default async function SchedulePage({
   gridStart.setUTCDate(gridStart.getUTCDate() - daysSinceMonday)
   const gridEnd = new Date(gridStart)
   gridEnd.setUTCDate(gridEnd.getUTCDate() + 42)
+
+  await ensureDailySchedules(now, gridEnd)
 
   const yearStart = new Date(Date.UTC(year, 0, 1))
   const yearEnd = new Date(Date.UTC(year + 1, 0, 1))
