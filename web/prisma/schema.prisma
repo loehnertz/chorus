@@ -12,15 +12,15 @@ datasource db {
 // User model (extends Neon Auth user)
 // Note: Auth data (email, password, sessions) lives in neon_auth schema
 model User {
-  id       String  @id  // UUID from Neon Auth (no @default, synced from auth)
+  id       String  @id // UUID from Neon Auth (no @default, synced from auth)
   name     String?
   image    String?
   approved Boolean @default(false) // Admin must approve before user can access data
 
   assignedChores ChoreAssignment[]
   completions    ChoreCompletion[]
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 }
 
 // Chore definition (the pool of tasks)
@@ -54,11 +54,11 @@ model ChoreAssignment {
 
 // Scheduled instance (slot-based system)
 model Schedule {
-  id           String    @id @default(uuid())
-  choreId      String
-  chore        Chore     @relation(fields: [choreId], references: [id], onDelete: Cascade)
+  id      String @id @default(uuid())
+  choreId String
+  chore   Chore  @relation(fields: [choreId], references: [id], onDelete: Cascade)
 
-  scheduledFor DateTime  // When this task should be done
+  scheduledFor DateTime // When this task should be done
   slotType     Frequency // What kind of slot (WEEKLY, MONTHLY, etc)
   suggested    Boolean   @default(true) // Was this auto-suggested or manually selected
   hidden       Boolean   @default(false) // Hidden from views; used to "remove" auto-generated schedules
@@ -73,15 +73,15 @@ model Schedule {
 
 // Completion record
 model ChoreCompletion {
-  id         String    @id @default(uuid())
-  choreId    String
-  chore      Chore     @relation(fields: [choreId], references: [id], onDelete: Cascade)
+  id      String @id @default(uuid())
+  choreId String
+  chore   Chore  @relation(fields: [choreId], references: [id], onDelete: Cascade)
 
   scheduleId String?   @unique
   schedule   Schedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
 
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   completedAt DateTime @default(now())
   notes       String?
