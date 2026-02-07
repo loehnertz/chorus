@@ -81,7 +81,7 @@ export function ChoresView({ chores, users }: ChoresViewProps) {
   }
 
   const chipBase =
-    'px-3 py-1.5 rounded-full text-sm font-[var(--font-display)] font-medium cursor-pointer transition-colors'
+    'px-3 py-1.5 rounded-full text-sm font-[var(--font-display)] font-medium transition-colors'
 
   return (
     <PageFadeIn className="space-y-7 md:space-y-8">

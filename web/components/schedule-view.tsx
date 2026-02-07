@@ -444,7 +444,7 @@ export function ScheduleView({
   }
 
   const viewChipBase =
-    'px-3 py-1.5 rounded-full text-sm font-[var(--font-display)] font-medium cursor-pointer transition-colors'
+    'px-3 py-1.5 rounded-full text-sm font-[var(--font-display)] font-medium transition-colors'
 
   return (
     <PageFadeIn className={cn('space-y-7 md:space-y-8 overflow-x-hidden', className)}>
@@ -467,7 +467,7 @@ export function ScheduleView({
                   type="button"
                   onClick={prevMonth}
                   className={cn(
-                    'inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] cursor-pointer',
+                    'inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)]',
                     'border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]/70',
                     'hover:bg-[var(--surface-2)]',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-terracotta)] focus-visible:ring-offset-2'
@@ -480,7 +480,7 @@ export function ScheduleView({
                   type="button"
                   onClick={nextMonth}
                   className={cn(
-                    'inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] cursor-pointer',
+                    'inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)]',
                     'border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]/70',
                     'hover:bg-[var(--surface-2)]',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-terracotta)] focus-visible:ring-offset-2'
@@ -549,7 +549,7 @@ export function ScheduleView({
                       className={cn(
                         'relative flex h-11 sm:h-12 min-w-0 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] border px-1 sm:px-2 py-1 sm:py-1.5 text-center',
                         cell.inMonth
-                          ? 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-2)] cursor-pointer'
+                          ? 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-2)]'
                           : 'border-transparent bg-transparent opacity-40',
                         selected && 'border-[var(--color-terracotta)] bg-[var(--color-terracotta)]/10',
                         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-terracotta)] focus-visible:ring-offset-2'
@@ -680,7 +680,7 @@ export function ScheduleView({
                             type="button"
                             onClick={() => requestDeleteSchedule(task.id)}
                             className={cn(
-                              'inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] cursor-pointer',
+                              'inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)]',
                               'text-red-600 hover:bg-red-600/10',
                               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-terracotta)] focus-visible:ring-offset-2'
                             )}

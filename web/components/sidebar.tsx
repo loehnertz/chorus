@@ -61,7 +61,7 @@ export function Sidebar({ user, className }: SidebarProps) {
                 href={item.href}
                 prefetch={false}
                 className={cn(
-                  'flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 cursor-pointer',
+                  'flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5',
                   'text-sm font-[var(--font-display)] font-medium transition-colors duration-150',
                   active
                     ? 'bg-[var(--surface-2)] text-[var(--foreground)]'
@@ -93,7 +93,7 @@ export function Sidebar({ user, className }: SidebarProps) {
                 type="button"
                 onClick={handleSignOut}
                 className={cn(
-                  'mt-0.5 inline-flex items-center gap-1 text-xs cursor-pointer',
+                  'mt-0.5 inline-flex items-center gap-1 text-xs',
                   'text-[var(--foreground)]/50 hover:text-[var(--color-terracotta)]',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-terracotta)] focus-visible:ring-offset-2 rounded'
                 )}

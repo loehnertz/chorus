@@ -40,7 +40,7 @@ export function CompletionCheckbox({
       className={cn(
         'h-8 w-8 shrink-0 rounded-full border-2',
         'inline-flex items-center justify-center',
-        'transition-colors duration-200 cursor-pointer',
+        'transition-colors duration-200',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-terracotta)] focus-visible:ring-offset-2',
         disabled && 'opacity-50 !cursor-not-allowed',
         checked

@@ -51,7 +51,6 @@ export function ChoreCard({
         'bg-[var(--surface)] rounded-[var(--radius-lg)] p-5 sm:p-6 shadow-[var(--shadow-soft)]',
         'hover:shadow-[var(--shadow-lifted)] transition-shadow duration-200',
         'border border-transparent hover:border-[var(--border)]',
-        onClick && 'cursor-pointer',
         className
       )}
       onClick={onClick}
@@ -74,7 +73,7 @@ export function ChoreCard({
               <button
                 type="button"
                 className={cn(
-                  'inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] cursor-pointer',
+                  'inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)]',
                   'text-[var(--foreground)]/60 hover:bg-[var(--surface-2)] hover:text-[var(--foreground)]',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-terracotta)] focus-visible:ring-offset-2'
                 )}

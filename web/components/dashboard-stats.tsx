@@ -51,7 +51,7 @@ function StatCard({
 
   const cardClass = cn(
     'bg-[var(--surface)] rounded-[var(--radius-md)] p-4 sm:p-5 shadow-[var(--shadow-soft)] border border-[var(--border)]',
-    href && 'cursor-pointer hover:shadow-[var(--shadow-lifted)] hover:-translate-y-0.5 transition-all duration-200'
+    href && 'hover:shadow-[var(--shadow-lifted)] hover:-translate-y-0.5 transition-all duration-200'
   )
 
   if (href) {

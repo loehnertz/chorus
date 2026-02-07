@@ -264,7 +264,7 @@ export function ChoreForm({ open, onOpenChange, users, initialValues, onSaved }:
                         key={u.id}
                         className={cn(
                           'flex items-center gap-3 rounded-[var(--radius-md)] px-2 py-2',
-                          'hover:bg-[var(--surface-2)]/50 cursor-pointer'
+                          'hover:bg-[var(--surface-2)]/50'
                         )}
                       >
                         <Checkbox

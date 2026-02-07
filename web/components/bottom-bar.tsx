@@ -31,7 +31,7 @@ export function BottomBar({ className }: BottomBarProps) {
               href={item.href}
               prefetch={false}
               className={cn(
-                'flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] px-3 py-2 cursor-pointer',
+                'flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] px-3 py-2',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-terracotta)] focus-visible:ring-offset-2'
               )}
             >

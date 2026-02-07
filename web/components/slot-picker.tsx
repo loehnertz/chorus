@@ -205,8 +205,8 @@ export function SlotPicker({
                     disabled
                       ? 'cursor-not-allowed opacity-60 border-[var(--border)]'
                       : selected
-                        ? 'border-[var(--color-terracotta)] bg-[var(--color-terracotta)]/10 cursor-pointer'
-                        : 'border-[var(--border)] hover:bg-[var(--surface-2)] cursor-pointer'
+                        ? 'border-[var(--color-terracotta)] bg-[var(--color-terracotta)]/10'
+                        : 'border-[var(--border)] hover:bg-[var(--surface-2)]'
                   )}
                   aria-pressed={selected}
                   aria-disabled={disabled || undefined}
