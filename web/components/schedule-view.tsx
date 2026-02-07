@@ -565,7 +565,7 @@ export function ScheduleView({
                     .map((u) => {
                       const key = dayKeyUtc(new Date(u.scheduledFor))
                       const isOthers = u.chore.assigneeIds.length > 0 && !u.chore.assigneeIds.includes(userId)
-                      const primaryAssigneeId = isOthers ? u.chore.assigneeIds[0] : null
+                      const primaryAssigneeId = u.chore.assigneeIds[0] ?? null
                       const primaryAssignee = primaryAssigneeId ? users.find((usr) => usr.id === primaryAssigneeId) : null
                       return (
                         <div key={u.id} className={cn('flex items-start justify-between gap-4', isOthers && 'opacity-60')}>
@@ -607,7 +607,7 @@ export function ScheduleView({
                   {selectedDayItems.map((task) => {
                     const disabled = task.completed || savingId === `complete:${task.id}`
                     const isOthers = task.chore.assigneeIds.length > 0 && !task.chore.assigneeIds.includes(userId)
-                    const primaryAssigneeId = isOthers ? task.chore.assigneeIds[0] : null
+                    const primaryAssigneeId = task.chore.assigneeIds[0] ?? null
                     const primaryAssignee = primaryAssigneeId ? users.find((usr) => usr.id === primaryAssigneeId) : null
                     const completedByOther = task.completed && task.completedByUserId && task.completedByUserId !== userId
                     const completer = completedByOther ? users.find((usr) => usr.id === task.completedByUserId) : null

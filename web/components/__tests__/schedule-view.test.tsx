@@ -223,8 +223,9 @@ describe('ScheduleView', () => {
     const myRow = Array.from(dayRows).find((row) => row.textContent?.includes('My chore'))
     expect(myRow?.className).not.toContain('opacity-60')
 
-    // The other user's avatar should appear next to their chore
+    // Avatars should appear next to assigned chores
     expect(screen.getByLabelText('Bob')).toBeInTheDocument()
+    expect(screen.getByLabelText('Alice')).toBeInTheDocument()
   })
 
   it('shows all upcoming tasks regardless of assignment', () => {
