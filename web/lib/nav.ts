@@ -9,7 +9,7 @@ export type NavItem = {
 
 export const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/chores', label: 'Chores', icon: ClipboardList },
   { href: '/schedule', label: 'Schedule', icon: CalendarDays },
+  { href: '/chores', label: 'Chores', icon: ClipboardList },
   { href: '/history', label: 'History', icon: History },
 ]
