@@ -1,3 +1,4 @@
+import { unstable_noStore as noStore } from 'next/cache'
 import { requireApprovedUser } from '@/lib/auth/require-approval'
 import { db } from '@/lib/db'
 import { startOfTodayUtc } from '@/lib/date'
@@ -27,6 +28,7 @@ export default async function SchedulePage({
 }: {
   searchParams?: SearchParams | Promise<SearchParams>
 }) {
+  noStore()
   const session = await requireApprovedUser()
   const userId = session.user.id
 

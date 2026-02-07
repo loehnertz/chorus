@@ -1,8 +1,10 @@
+import { unstable_noStore as noStore } from 'next/cache'
 import { requireApprovedUser } from '@/lib/auth/require-approval'
 import { db } from '@/lib/db'
 import { ChoresView } from '@/components/chores-view'
 
 export default async function ChoresPage() {
+  noStore()
   await requireApprovedUser()
 
   const [chores, users] = await Promise.all([

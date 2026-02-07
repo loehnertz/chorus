@@ -34,6 +34,7 @@ export function Sidebar({ user, className }: SidebarProps) {
       <div className="flex h-full flex-col p-5">
         <Link
           href="/dashboard"
+          prefetch={false}
           className="flex items-center gap-2 rounded-[var(--radius-md)] px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-terracotta)] focus-visible:ring-offset-2"
         >
           <Music2 className="h-5 w-5 text-[var(--color-terracotta)]" aria-hidden="true" />
@@ -50,6 +51,7 @@ export function Sidebar({ user, className }: SidebarProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 className={cn(
                   'flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5',
                   'text-sm font-[var(--font-display)] font-medium transition-colors duration-150',

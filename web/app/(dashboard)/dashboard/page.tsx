@@ -1,3 +1,4 @@
+import { unstable_noStore as noStore } from 'next/cache'
 import { requireApprovedUser } from '@/lib/auth/require-approval'
 import { db } from '@/lib/db'
 import { DashboardView } from '@/components/dashboard-view'
@@ -9,6 +10,7 @@ import { computeStreakDaysUtc } from '@/lib/streak'
  * Main dashboard for authenticated and approved users
  */
 export default async function DashboardPage() {
+  noStore()
   const session = await requireApprovedUser()
   const userId = session.user.id
 
