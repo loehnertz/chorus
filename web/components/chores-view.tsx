@@ -9,6 +9,7 @@ import { FREQUENCIES } from '@/types/frequency'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { ChoreCard } from '@/components/chore-card'
 import { ChoreForm } from '@/components/chore-form'
 import { PageFadeIn } from '@/components/page-fade-in'
@@ -37,6 +38,8 @@ export function ChoresView({ chores, users }: ChoresViewProps) {
   const [filter, setFilter] = React.useState<FrequencyFilter>('ALL')
   const [formOpen, setFormOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<ChoresViewChore | null>(null)
+  const [confirmDelete, setConfirmDelete] = React.useState<ChoresViewChore | null>(null)
+  const [deletingId, setDeletingId] = React.useState<string | null>(null)
 
   const filtered = React.useMemo(() => {
     if (filter === 'ALL') return chores
@@ -53,10 +56,9 @@ export function ChoresView({ chores, users }: ChoresViewProps) {
     setFormOpen(true)
   }
 
-  const handleDelete = async (chore: ChoresViewChore) => {
-    const ok = window.confirm(`Delete "${chore.title}"? This cannot be undone.`)
-    if (!ok) return
-
+  const deleteChore = async (chore: ChoresViewChore) => {
+    if (deletingId) return
+    setDeletingId(chore.id)
     try {
       const res = await fetch(`/api/chores/${chore.id}`, { method: 'DELETE' })
       if (!res.ok) {
@@ -68,7 +70,14 @@ export function ChoresView({ chores, users }: ChoresViewProps) {
       router.refresh()
     } catch {
       toast.error('Failed to delete chore')
+    } finally {
+      setDeletingId(null)
     }
+  }
+
+  const requestDelete = (chore: ChoresViewChore) => {
+    if (deletingId) return
+    setConfirmDelete(chore)
   }
 
   const chipBase =
@@ -138,21 +147,21 @@ export function ChoresView({ chores, users }: ChoresViewProps) {
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-          {filtered.map((c, idx) => (
-            <ChoreCard
-              key={c.id}
+              {filtered.map((c, idx) => (
+                <ChoreCard
+                  key={c.id}
               title={c.title}
               description={c.description}
               frequency={c.frequency}
               assignees={c.assignees}
-              completionCount={c.completionCount}
-              index={idx}
-              onEdit={() => openEdit(c)}
-              onDelete={() => handleDelete(c)}
-            />
-          ))}
-        </div>
-      )}
+                  completionCount={c.completionCount}
+                  index={idx}
+                  onEdit={() => openEdit(c)}
+                  onDelete={() => requestDelete(c)}
+                />
+              ))}
+            </div>
+          )}
 
       <ChoreForm
         open={formOpen}
@@ -170,6 +179,26 @@ export function ChoresView({ chores, users }: ChoresViewProps) {
             : undefined
         }
         onSaved={() => router.refresh()}
+      />
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        onOpenChange={(open) => {
+          if (!open) setConfirmDelete(null)
+        }}
+        title="Delete chore?"
+        description={
+          confirmDelete
+            ? `Delete \"${confirmDelete.title}\"? This cannot be undone.`
+            : undefined
+        }
+        confirmLabel="Delete"
+        destructive
+        confirmDisabled={!confirmDelete || !!deletingId}
+        onConfirm={async () => {
+          if (!confirmDelete) return
+          await deleteChore(confirmDelete)
+        }}
       />
     </PageFadeIn>
   )

@@ -34,7 +34,6 @@ describe('ScheduleView', () => {
     toastMessage.mockReset()
     // @ts-expect-error - test env
     global.fetch = jest.fn()
-    jest.spyOn(window, 'confirm').mockReturnValue(true)
   })
 
   afterEach(() => {
@@ -154,6 +153,9 @@ describe('ScheduleView', () => {
     expect(screen.getAllByRole('checkbox')).toHaveLength(1)
 
     await user.click(screen.getByLabelText('Remove'))
+
+    const dialog = await screen.findByRole('dialog')
+    await user.click(within(dialog).getByRole('button', { name: 'Remove' }))
 
     await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1))
     expect(global.fetch).toHaveBeenCalledWith('/api/schedules/s1', { method: 'DELETE' })

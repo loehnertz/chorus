@@ -16,6 +16,7 @@ import { FrequencyBadge } from '@/components/ui/frequency-badge'
 import { CompletionCheckbox } from '@/components/completion-checkbox'
 import { SlotPicker, type SlotPickerChore } from '@/components/slot-picker'
 import { PageFadeIn } from '@/components/page-fade-in'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 export type ScheduleViewChore = {
   id: string
@@ -97,6 +98,7 @@ export function ScheduleView({
   )
   const [viewMode, setViewMode] = React.useState<(typeof VIEW_MODES)[number]>('DAILY')
   const [savingId, setSavingId] = React.useState<string | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = React.useState<string | null>(null)
   const [items, setItems] = React.useState<ScheduleViewItem[]>(monthSchedules)
   const [upcoming, setUpcoming] = React.useState<ScheduleViewItem[]>(upcomingSchedules)
 
@@ -240,8 +242,6 @@ export function ScheduleView({
 
   const deleteSchedule = async (scheduleId: string) => {
     if (savingId) return
-    const ok = window.confirm('Remove this scheduled item?')
-    if (!ok) return
 
     setSavingId(`delete:${scheduleId}`)
     try {
@@ -259,6 +259,11 @@ export function ScheduleView({
     } finally {
       setSavingId(null)
     }
+  }
+
+  const requestDeleteSchedule = (scheduleId: string) => {
+    if (savingId) return
+    setConfirmDeleteId(scheduleId)
   }
 
   const markDone = async (task: ScheduleViewItem) => {
@@ -465,7 +470,7 @@ export function ScheduleView({
                           <FrequencyBadge frequency={task.chore.frequency} />
                           <button
                             type="button"
-                            onClick={() => deleteSchedule(task.id)}
+                            onClick={() => requestDeleteSchedule(task.id)}
                             className={cn(
                               'inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)]',
                               'text-red-600 hover:bg-red-600/10',
@@ -539,7 +544,7 @@ export function ScheduleView({
                             onClick={() => {
                               if (scheduled) {
                                 const existing = selectedDayItems.find((s) => s.chore.id === chore.id)
-                                if (existing) void deleteSchedule(existing.id)
+                                if (existing) requestDeleteSchedule(existing.id)
                                 return
                               }
                               void createSchedule(chore.id)
@@ -572,6 +577,27 @@ export function ScheduleView({
           </Card>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!confirmDeleteId}
+        onOpenChange={(open) => setConfirmDeleteId(open ? confirmDeleteId : null)}
+        title="Remove from schedule?"
+        description={
+          confirmDeleteId
+            ? (() => {
+                const item = items.find((i) => i.id === confirmDeleteId)
+                return item ? `This will remove \"${item.chore.title}\" from ${formatDayTitleUtc(dayKeyUtc(new Date(item.scheduledFor)))}.` : undefined
+              })()
+            : undefined
+        }
+        confirmLabel="Remove"
+        destructive
+        confirmDisabled={!confirmDeleteId || !!savingId}
+        onConfirm={async () => {
+          if (!confirmDeleteId) return
+          await deleteSchedule(confirmDeleteId)
+        }}
+      />
     </PageFadeIn>
   )
 }
