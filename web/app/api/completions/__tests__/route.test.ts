@@ -17,13 +17,14 @@ jest.mock('@/lib/db', () => ({
     choreCompletion: {
       findFirst: jest.fn(),
       create: jest.fn(),
+      deleteMany: jest.fn(),
       findMany: jest.fn(),
       count: jest.fn(),
     },
   },
 }));
 
-import { GET, POST } from '../route';
+import { DELETE, GET, POST } from '../route';
 import { createMockSession, createMockRequest } from '@/lib/__tests__/test-helpers';
 
 import { requireApprovedUserApi } from '@/lib/auth/require-approval';
@@ -376,6 +377,71 @@ describe('GET /api/completions', () => {
 
     const request = createMockRequest('/api/completions');
     const response = await GET(request as never);
+
+    expect(response.status).toBe(500);
+  });
+});
+
+describe('DELETE /api/completions', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should return 401 when not authenticated', async () => {
+    (requireApprovedUserApi as jest.Mock).mockResolvedValue(
+      Response.json({ error: 'Unauthorized' }, { status: 401 }),
+    );
+
+    const request = createMockRequest('/api/completions?scheduleId=s1', {
+      method: 'DELETE',
+    });
+    const response = await DELETE(request as never);
+
+    expect(response.status).toBe(401);
+  });
+
+  it('should return 400 when scheduleId is missing', async () => {
+    const session = createMockSession();
+    (requireApprovedUserApi as jest.Mock).mockResolvedValue(session);
+
+    const request = createMockRequest('/api/completions', {
+      method: 'DELETE',
+    });
+    const response = await DELETE(request as never);
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toBe('scheduleId is required');
+  });
+
+  it('should delete the current user completion for scheduleId', async () => {
+    const session = createMockSession({ userId: 'u1' });
+    (requireApprovedUserApi as jest.Mock).mockResolvedValue(session);
+    ;(db.choreCompletion.deleteMany as jest.Mock).mockResolvedValue({ count: 1 });
+
+    const request = createMockRequest('/api/completions?scheduleId=s1', {
+      method: 'DELETE',
+    });
+    const response = await DELETE(request as never);
+
+    expect(response.status).toBe(204);
+    expect(db.choreCompletion.deleteMany).toHaveBeenCalledWith({
+      where: {
+        scheduleId: 's1',
+        userId: 'u1',
+      },
+    });
+  });
+
+  it('should return 500 on database error', async () => {
+    const session = createMockSession();
+    (requireApprovedUserApi as jest.Mock).mockResolvedValue(session);
+    ;(db.choreCompletion.deleteMany as jest.Mock).mockRejectedValue(new Error('DB error'));
+
+    const request = createMockRequest('/api/completions?scheduleId=s1', {
+      method: 'DELETE',
+    });
+    const response = await DELETE(request as never);
 
     expect(response.status).toBe(500);
   });

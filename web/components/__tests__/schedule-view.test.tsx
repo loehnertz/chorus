@@ -316,4 +316,44 @@ describe('ScheduleView', () => {
     // Should show who completed it
     expect(screen.getByText(/completed by Bob/)).toBeInTheDocument()
   })
+
+  it('allows the current user to undo their completion', async () => {
+    const user = userEvent.setup()
+
+    ;(global.fetch as jest.Mock).mockResolvedValue({ ok: true })
+
+    render(
+      <ScheduleView
+        userId="u1"
+        year={2026}
+        monthIndex={1}
+        todayDayKey="2026-02-06"
+        initialSelectedDayKey="2026-02-06"
+        chores={[{ id: 'c1', title: 'Shared chore', frequency: 'DAILY', assigneeIds: ['u1'] }]}
+        monthSchedules={[
+          {
+            id: 's1',
+            scheduledFor: '2026-02-06T00:00:00.000Z',
+            slotType: 'DAILY',
+            suggested: false,
+            completed: true,
+            completedByUserId: 'u1',
+            chore: { id: 'c1', title: 'Shared chore', frequency: 'DAILY', assigneeIds: ['u1'] },
+          },
+        ]}
+        upcomingSchedules={[]}
+        users={defaultUsers}
+      />
+    )
+
+    const checkbox = screen.getByRole('checkbox')
+    expect(checkbox).toBeChecked()
+
+    await user.click(checkbox)
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1))
+    expect(global.fetch).toHaveBeenCalledWith('/api/completions?scheduleId=s1', { method: 'DELETE' })
+    expect(toastMessage).toHaveBeenCalledWith('Undone')
+    expect(mockRefresh).toHaveBeenCalled()
+  })
 })

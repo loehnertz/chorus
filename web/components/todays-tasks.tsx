@@ -32,39 +32,55 @@ export function TodaysTasks({ tasks, className }: TodaysTasksProps) {
     setCompletedIds(new Set(tasks.filter((t) => t.completed).map((t) => t.scheduleId)))
   }, [tasks])
 
-  const markDone = async (task: TodaysTask) => {
+  const setCompletion = async (task: TodaysTask, nextChecked: boolean) => {
     if (savingId) return
-    if (completedIds.has(task.scheduleId)) return
 
-    setSavingId(task.scheduleId)
-    setCompletedIds((prev) => new Set(prev).add(task.scheduleId))
+    const scheduleId = task.scheduleId
+    const wasChecked = completedIds.has(scheduleId)
+    if (wasChecked === nextChecked) return
+
+    setSavingId(scheduleId)
+    setCompletedIds((prev) => {
+      const next = new Set(prev)
+      if (nextChecked) next.add(scheduleId)
+      else next.delete(scheduleId)
+      return next
+    })
 
     try {
-      const res = await fetch('/api/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ choreId: task.choreId, scheduleId: task.scheduleId }),
-      })
+      const res = nextChecked
+        ? await fetch('/api/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ choreId: task.choreId, scheduleId }),
+          })
+        : await fetch(`/api/completions?scheduleId=${encodeURIComponent(scheduleId)}`, {
+            method: 'DELETE',
+          })
 
       if (!res.ok) {
         setCompletedIds((prev) => {
           const next = new Set(prev)
-          next.delete(task.scheduleId)
+          if (wasChecked) next.add(scheduleId)
+          else next.delete(scheduleId)
           return next
         })
-        toast.error('Failed to record completion')
+        toast.error(nextChecked ? 'Failed to record completion' : 'Failed to undo completion')
         return
       }
 
-      toast.success('Completed!')
+      if (nextChecked) toast.success('Completed!')
+      else toast.message('Undone')
+
       router.refresh()
     } catch {
       setCompletedIds((prev) => {
         const next = new Set(prev)
-        next.delete(task.scheduleId)
+        if (wasChecked) next.add(scheduleId)
+        else next.delete(scheduleId)
         return next
       })
-      toast.error('Failed to record completion')
+      toast.error(nextChecked ? 'Failed to record completion' : 'Failed to undo completion')
     } finally {
       setSavingId(null)
     }
@@ -74,10 +90,14 @@ export function TodaysTasks({ tasks, className }: TodaysTasksProps) {
     <div className={cn('divide-y divide-[var(--border)]', className)}>
       {tasks.map((task) => {
         const checked = completedIds.has(task.scheduleId)
-        const disabled = checked || savingId === task.scheduleId
+        const disabled = savingId === task.scheduleId
         return (
           <div key={task.scheduleId} className="flex items-center gap-4 py-4 sm:py-5">
-            <CompletionCheckbox checked={checked} disabled={disabled} onCheckedChange={() => markDone(task)} />
+            <CompletionCheckbox
+              checked={checked}
+              disabled={disabled}
+              onCheckedChange={(next) => setCompletion(task, next)}
+            />
             <div className="min-w-0 flex-1">
               <p
                 className={cn(

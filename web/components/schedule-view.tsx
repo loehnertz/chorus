@@ -393,34 +393,51 @@ export function ScheduleView({
     setConfirmDeleteId(scheduleId)
   }
 
-  const markDone = async (task: ScheduleViewItem) => {
+  const setCompletion = async (task: ScheduleViewItem, nextChecked: boolean) => {
     if (savingId) return
-    if (task.completed) return
 
-    setSavingId(`complete:${task.id}`)
-    setItems((prev) => prev.map((s) => (s.id === task.id ? { ...s, completed: true } : s)))
-    setUpcoming((prev) => prev.map((s) => (s.id === task.id ? { ...s, completed: true } : s)))
+    const scheduleId = task.id
+    const wasChecked = task.completed
+    if (wasChecked === nextChecked) return
+
+    const canUndo = task.completed && task.completedByUserId === userId
+    if (!nextChecked && !canUndo) return
+
+    const actionId = nextChecked ? `complete:${scheduleId}` : `undo:${scheduleId}`
+    setSavingId(actionId)
+
+    const applyOptimistic = (patch: Partial<Pick<ScheduleViewItem, 'completed' | 'completedByUserId'>>) => {
+      setItems((prev) => prev.map((s) => (s.id === scheduleId ? { ...s, ...patch } : s)))
+      setUpcoming((prev) => prev.map((s) => (s.id === scheduleId ? { ...s, ...patch } : s)))
+    }
+
+    const prevCompletedByUserId = task.completedByUserId ?? null
+    applyOptimistic({ completed: nextChecked, completedByUserId: nextChecked ? userId : null })
 
     try {
-      const res = await fetch('/api/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ choreId: task.chore.id, scheduleId: task.id }),
-      })
+      const res = nextChecked
+        ? await fetch('/api/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ choreId: task.chore.id, scheduleId }),
+          })
+        : await fetch(`/api/completions?scheduleId=${encodeURIComponent(scheduleId)}`, {
+            method: 'DELETE',
+          })
 
       if (!res.ok) {
-        setItems((prev) => prev.map((s) => (s.id === task.id ? { ...s, completed: false } : s)))
-        setUpcoming((prev) => prev.map((s) => (s.id === task.id ? { ...s, completed: false } : s)))
-        toast.error('Failed to record completion')
+        applyOptimistic({ completed: wasChecked, completedByUserId: prevCompletedByUserId })
+        toast.error(nextChecked ? 'Failed to record completion' : 'Failed to undo completion')
         return
       }
 
-      toast.success('Completed!')
+      if (nextChecked) toast.success('Completed!')
+      else toast.message('Undone')
+
       router.refresh()
     } catch {
-      setItems((prev) => prev.map((s) => (s.id === task.id ? { ...s, completed: false } : s)))
-      setUpcoming((prev) => prev.map((s) => (s.id === task.id ? { ...s, completed: false } : s)))
-      toast.error('Failed to record completion')
+      applyOptimistic({ completed: wasChecked, completedByUserId: prevCompletedByUserId })
+      toast.error(nextChecked ? 'Failed to record completion' : 'Failed to undo completion')
     } finally {
       setSavingId(null)
     }
@@ -615,7 +632,8 @@ export function ScheduleView({
               ) : (
                 <div className="divide-y divide-[var(--border)]">
                   {selectedDayItems.map((task) => {
-                    const disabled = task.completed || savingId === `complete:${task.id}`
+                    const canUndo = task.completed && task.completedByUserId === userId
+                    const disabled = !!savingId || (task.completed && !canUndo)
                     const isOthers = task.chore.assigneeIds.length > 0 && !task.chore.assigneeIds.includes(userId)
                     const primaryAssigneeId = task.chore.assigneeIds[0] ?? null
                     const primaryAssignee = primaryAssigneeId ? users.find((usr) => usr.id === primaryAssigneeId) : null
@@ -626,7 +644,7 @@ export function ScheduleView({
                         <CompletionCheckbox
                           checked={task.completed}
                           disabled={disabled}
-                          onCheckedChange={() => markDone(task)}
+                          onCheckedChange={(next) => setCompletion(task, next)}
                         />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">

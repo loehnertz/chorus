@@ -118,3 +118,29 @@ export async function GET(request: Request) {
     return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const result = await requireApprovedUserApi();
+    if (isErrorResponse(result)) return result;
+    const session = result;
+
+    const { searchParams } = new URL(request.url);
+    const scheduleId = searchParams.get('scheduleId');
+    if (!scheduleId?.trim()) {
+      return Response.json({ error: 'scheduleId is required' }, { status: 400 });
+    }
+
+    await db.choreCompletion.deleteMany({
+      where: {
+        scheduleId,
+        userId: session.user.id,
+      },
+    });
+
+    return new Response(null, { status: 204 });
+  } catch (error) {
+    console.error('Failed to delete completion:', error);
+    return Response.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
