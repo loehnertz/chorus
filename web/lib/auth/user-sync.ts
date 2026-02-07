@@ -17,34 +17,22 @@ import type { NeonAuthUser } from '@/types/auth';
  */
 export async function syncUser(neonUser: NeonAuthUser, approved?: boolean) {
   try {
-    // Check if user already exists in app database
-    const existingUser = await db.user.findUnique({
+    // Use upsert to atomically create or update the user record
+    // This avoids race conditions where concurrent requests both try to create
+    return await db.user.upsert({
       where: { id: neonUser.id },
+      update: {
+        name: neonUser.name || null,
+        image: neonUser.image || null,
+        ...(approved !== undefined && { approved }),
+      },
+      create: {
+        id: neonUser.id,
+        name: neonUser.name || null,
+        image: neonUser.image || null,
+        approved: approved ?? false,
+      },
     });
-
-    if (existingUser) {
-      // Update existing user with latest data from Neon Auth
-      // Don't change approval status unless explicitly specified
-      return await db.user.update({
-        where: { id: neonUser.id },
-        data: {
-          name: neonUser.name || null,
-          image: neonUser.image || null,
-          ...(approved !== undefined && { approved }),
-        },
-      });
-    } else {
-      // Create new user record in app database
-      // Default to NOT approved for security (admin must approve)
-      return await db.user.create({
-        data: {
-          id: neonUser.id, // Use the same UUID from Neon Auth
-          name: neonUser.name || null,
-          image: neonUser.image || null,
-          approved: approved ?? false, // Require approval by default
-        },
-      });
-    }
   } catch (error) {
     console.error('Failed to sync user:', error);
     throw new Error('Failed to sync user data');
